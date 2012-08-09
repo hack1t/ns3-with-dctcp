@@ -247,6 +247,7 @@ def build(bld):
         'model/system-path.h',
         'model/unused.h',
         'model/math.h',
+        'model/linux-list.h',
         ]
 
     if sys.platform == 'win32':
