@@ -86,6 +86,8 @@ OnOffApplication::GetTypeId (void)
                    MakeTypeIdChecker ())
     .AddTraceSource ("Tx", "A new packet is created and is sent",
                      MakeTraceSourceAccessor (&OnOffApplication::m_txTrace))
+    .AddTraceSource ("SocketCreateTrace", "Socket that was created",
+                     MakeTraceSourceAccessor (&OnOffApplication::m_txTraceSource))
   ;
   return tid;
 }
@@ -148,6 +150,7 @@ void OnOffApplication::StartApplication () // Called at time specified by Start
   if (!m_socket)
     {
       m_socket = Socket::CreateSocket (GetNode (), m_tid);
+      m_txTraceSource (m_socket);
       m_socket->Bind ();
       m_socket->Connect (m_peer);
       m_socket->SetAllowBroadcast (true);

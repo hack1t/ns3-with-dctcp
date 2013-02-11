@@ -155,6 +155,7 @@ private:
   bool            m_sending;      // True if currently in sending state
   TypeId          m_tid;
   TracedCallback<Ptr<const Packet> > m_txTrace;
+  TracedCallback<Ptr<const Socket> > m_txTraceSource;
 
 private:
   void ScheduleNextTx ();
