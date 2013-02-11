@@ -109,7 +109,7 @@ private:
   uint32_t        m_totalRx;      // Total bytes received
   TypeId          m_tid;          // Protocol TypeId
   TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;
-
+  TracedCallback<Ptr<const Socket> > m_rxTraceSource;
 };
 
 } // namespace ns3

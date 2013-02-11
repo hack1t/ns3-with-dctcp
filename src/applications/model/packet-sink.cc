@@ -53,6 +53,8 @@ PacketSink::GetTypeId (void)
                    MakeTypeIdChecker ())
     .AddTraceSource ("Rx", "A packet has been received",
                      MakeTraceSourceAccessor (&PacketSink::m_rxTrace))
+    .AddTraceSource ("SocketCreateTrace", "Socket that was created",
+                     MakeTraceSourceAccessor (&PacketSink::m_rxTraceSource))
   ;
   return tid;
 }
@@ -202,6 +204,7 @@ void PacketSink::HandleAccept (Ptr<Socket> s, const Address& from)
   NS_LOG_FUNCTION (this << s << from);
   s->SetRecvCallback (MakeCallback (&PacketSink::HandleRead, this));
   m_socketList.push_back (s);
+  m_rxTraceSource (s);
 }
 
 } // Namespace ns3
