@@ -57,12 +57,12 @@ NS_OBJECT_ENSURE_REGISTERED (TcpL4Protocol);
 
 #undef NS_LOG_APPEND_CONTEXT
 #define NS_LOG_APPEND_CONTEXT                                   \
-  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; } 
+  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; }
 
 /* see http://www.iana.org/assignments/protocol-numbers */
 const uint8_t TcpL4Protocol::PROT_NUMBER = 6;
 
-TypeId 
+TypeId
 TcpL4Protocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpL4Protocol")
@@ -98,15 +98,15 @@ TcpL4Protocol::~TcpL4Protocol ()
   NS_LOG_FUNCTION_NOARGS ();
 }
 
-void 
+void
 TcpL4Protocol::SetNode (Ptr<Node> node)
 {
   m_node = node;
 }
 
-/* 
+/*
  * This method is called by AddAgregate and completes the aggregation
- * by setting the node in the TCP stack, link it to the ipv4 stack and 
+ * by setting the node in the TCP stack, link it to the ipv4 stack and
  * adding TCP socket factory to the node.
  */
 void
@@ -131,7 +131,7 @@ TcpL4Protocol::NotifyNewAggregate ()
   // functions.  Since these functions have different prototypes, we
   // need to keep track of whether we are connected to an IPv4 or
   // IPv6 lower layer and call the appropriate one.
-  
+
   if (ipv4 != 0 && m_downTarget.IsNull ())
     {
       ipv4->Insert(this);
@@ -145,7 +145,7 @@ TcpL4Protocol::NotifyNewAggregate ()
   Object::NotifyNewAggregate ();
 }
 
-int 
+int
 TcpL4Protocol::GetProtocolNumber (void) const
 {
   return PROT_NUMBER;
@@ -234,7 +234,7 @@ TcpL4Protocol::Allocate (Ipv4Address localAddress, uint16_t localPort,
                                 peerAddress, peerPort);
 }
 
-void 
+void
 TcpL4Protocol::DeAllocate (Ipv4EndPoint *endPoint)
 {
   NS_LOG_FUNCTION (this << endPoint);
@@ -423,7 +423,7 @@ TcpL4Protocol::Receive (Ptr<Packet> packet,
     }
   NS_ASSERT_MSG (endPoints.size () == 1, "Demux returned more than one endpoint");
   NS_LOG_LOGIC ("TcpL4Protocol "<<this<<" forwarding up to endpoint/socket");
-  (*endPoints.begin ())->ForwardUp (packet, ipHeader, tcpHeader.GetSourcePort (), 
+  (*endPoints.begin ())->ForwardUp (packet, ipHeader, tcpHeader.GetSourcePort (),
                                     incomingInterface);
   return IpL4Protocol::RX_OK;
 }
@@ -510,7 +510,7 @@ TcpL4Protocol::Receive (Ptr<Packet> packet,
 }
 
 void
-TcpL4Protocol::Send (Ptr<Packet> packet, 
+TcpL4Protocol::Send (Ptr<Packet> packet,
                      Ipv4Address saddr, Ipv4Address daddr,
                      uint16_t sport, uint16_t dport, Ptr<NetDevice> oif)
 {
@@ -620,7 +620,7 @@ TcpL4Protocol::SendPacket (Ptr<Packet> packet, const TcpHeader &outgoing,
 
   packet->AddHeader (outgoingHeader);
 
-  Ptr<Ipv4> ipv4 = 
+  Ptr<Ipv4> ipv4 =
     m_node->GetObject<Ipv4> ();
   if (ipv4 != 0)
     {

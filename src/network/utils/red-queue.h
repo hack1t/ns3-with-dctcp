@@ -94,7 +94,7 @@ public:
    * \brief Destructor
    *
    * Destructor
-   */ 
+   */
   virtual ~RedQueue ();
 
   /*
@@ -111,7 +111,7 @@ public:
     uint32_t qLimDrop;
   } Stats;
 
-  /* 
+  /*
    * \brief Drop types
    *
    */

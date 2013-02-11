@@ -18,7 +18,7 @@
  */
 
 #define NS_LOG_APPEND_CONTEXT                                   \
-  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; } 
+  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; }
 
 #include "ns3/node.h"
 #include "ns3/inet-socket-address.h"
@@ -150,12 +150,12 @@ void
 NscTcpSocketImpl::SetNode (Ptr<Node> node)
 {
   m_node = node;
-  // Initialize some variables 
+  // Initialize some variables
   m_cWnd = m_initialCWnd * m_segmentSize;
   m_rxWindowSize = m_advertisedWindowSize;
 }
 
-void 
+void
 NscTcpSocketImpl::SetTcp (Ptr<NscTcpL4Protocol> tcp)
 {
   m_nscTcpSocket = tcp->m_nscStack->new_tcp_socket ();
@@ -183,7 +183,7 @@ NscTcpSocketImpl::GetNode (void) const
   return m_node;
 }
 
-void 
+void
 NscTcpSocketImpl::Destroy (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -220,7 +220,7 @@ NscTcpSocketImpl::Bind6 ()
   m_errno = ERROR_AFNOSUPPORT;
   return (-1);
 }
-int 
+int
 NscTcpSocketImpl::Bind (const Address &address)
 {
   NS_LOG_FUNCTION (this<<address);
@@ -256,14 +256,14 @@ NscTcpSocketImpl::Bind (const Address &address)
   return FinishBind ();
 }
 
-int 
+int
 NscTcpSocketImpl::ShutdownSend (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_shutdownSend = true;
   return 0;
 }
-int 
+int
 NscTcpSocketImpl::ShutdownRecv (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -472,7 +472,7 @@ uint32_t
 NscTcpSocketImpl::GetRxAvailable (void) const
 {
   NS_LOG_FUNCTION_NOARGS ();
-  // We separately maintain this state to avoid walking the queue 
+  // We separately maintain this state to avoid walking the queue
   // every time this might be called
   return m_rxAvailable;
 }
@@ -511,7 +511,7 @@ void NscTcpSocketImpl::CompleteFork (void)
   if (0 == m_nscTcpSocket->getsockname ((struct sockaddr *) &sin, &sin_len))
     m_localAddress = Ipv4Address::Deserialize ((const uint8_t*) &sin.sin_addr);
 
-  NS_LOG_LOGIC ("NscTcpSocketImpl " << this << " accepted connection from " 
+  NS_LOG_LOGIC ("NscTcpSocketImpl " << this << " accepted connection from "
                                     << m_remoteAddress << ":" << m_remotePort
                                     << " to " << m_localAddress << ":" << m_localPort);
   //equivalent to FinishBind
@@ -753,7 +753,7 @@ NscTcpSocketImpl::GetInitialCwnd (void) const
   return m_initialCWnd;
 }
 
-void 
+void
 NscTcpSocketImpl::SetConnTimeout (Time timeout)
 {
   m_cnTimeout = timeout;
@@ -765,19 +765,19 @@ NscTcpSocketImpl::GetConnTimeout (void) const
   return m_cnTimeout;
 }
 
-void 
+void
 NscTcpSocketImpl::SetConnCount (uint32_t count)
 {
   m_cnCount = count;
 }
 
-uint32_t 
+uint32_t
 NscTcpSocketImpl::GetConnCount (void) const
 {
   return m_cnCount;
 }
 
-void 
+void
 NscTcpSocketImpl::SetDelAckTimeout (Time timeout)
 {
   m_delAckTimeout = timeout;
@@ -813,7 +813,7 @@ NscTcpSocketImpl::GetTcpNoDelay (void) const
   return m_noDelay;
 }
 
-void 
+void
 NscTcpSocketImpl::SetPersistTimeout (Time timeout)
 {
   m_persistTimeout = timeout;

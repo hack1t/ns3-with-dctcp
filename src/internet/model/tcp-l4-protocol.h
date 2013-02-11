@@ -46,10 +46,10 @@ class Ipv6EndPoint;
 /**
  * \ingroup tcp
  * \brief A layer between the sockets interface and IP
- * 
+ *
  * This class allocates "endpoint" objects (ns3::Ipv4EndPoint) for TCP,
  * and SHOULD checksum packets its receives from the socket layer going down
- * the stack , but currently checksumming is disabled.  It also receives 
+ * the stack , but currently checksumming is disabled.  It also receives
  * packets from IP, and forwards them up to the endpoints.
 */
 
@@ -100,10 +100,10 @@ public:
    * \param oif The output interface bound. Defaults to null (unspecified).
    */
   void Send (Ptr<Packet> packet,
-             Ipv4Address saddr, Ipv4Address daddr, 
+             Ipv4Address saddr, Ipv4Address daddr,
              uint16_t sport, uint16_t dport, Ptr<NetDevice> oif = 0);
   void Send (Ptr<Packet> packet,
-             Ipv6Address saddr, Ipv6Address daddr, 
+             Ipv6Address saddr, Ipv6Address daddr,
              uint16_t sport, uint16_t dport, Ptr<NetDevice> oif = 0);
   /**
    * \brief Receive a packet up the protocol stack
@@ -147,7 +147,7 @@ public:
 
 protected:
   virtual void DoDispose (void);
-  /* 
+  /*
    * This function will notify other components connected to the node that a new stack member is now connected
    * This will be used to notify Layer 3 protocol of layer 4 protocol stack to connect them together.
    */

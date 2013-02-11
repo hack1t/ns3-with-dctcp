@@ -117,7 +117,7 @@ std::istream & operator >> (std::istream &is, ObjectFactory &factory);
  * it with a set of attributes.
  */
 template <typename T>
-Ptr<T> 
+Ptr<T>
 CreateObjectWithAttributes (std::string n1 = "", const AttributeValue & v1 = EmptyAttributeValue (),
                             std::string n2 = "", const AttributeValue & v2 = EmptyAttributeValue (),
                             std::string n3 = "", const AttributeValue & v3 = EmptyAttributeValue (),
@@ -143,7 +143,7 @@ ATTRIBUTE_HELPER_HEADER (ObjectFactory);
 namespace ns3 {
 
 template <typename T>
-Ptr<T> 
+Ptr<T>
 ObjectFactory::Create (void) const
 {
   Ptr<Object> object = Create ();
@@ -151,7 +151,7 @@ ObjectFactory::Create (void) const
 }
 
 template <typename T>
-Ptr<T> 
+Ptr<T>
 CreateObjectWithAttributes (std::string n1, const AttributeValue & v1,
                             std::string n2, const AttributeValue & v2,
                             std::string n3, const AttributeValue & v3,

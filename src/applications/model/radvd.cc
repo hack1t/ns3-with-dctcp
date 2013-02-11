@@ -100,7 +100,7 @@ void Radvd::StartApplication ()
   for (RadvdInterfaceListCI it = m_configurations.begin (); it != m_configurations.end (); it++)
     {
       m_eventIds[(*it)->GetInterface ()] = EventId ();
-      ScheduleTransmit (Seconds (0.), (*it), m_eventIds[(*it)->GetInterface ()], Ipv6Address::GetAllNodesMulticast (), true); 
+      ScheduleTransmit (Seconds (0.), (*it), m_eventIds[(*it)->GetInterface ()], Ipv6Address::GetAllNodesMulticast (), true);
     }
 }
 
@@ -126,7 +126,7 @@ void Radvd::AddConfiguration (Ptr<RadvdInterface> routerInterface)
   m_configurations.push_back (routerInterface);
 }
 
-int64_t 
+int64_t
 Radvd:: AssignStreams (int64_t stream)
 {
   NS_LOG_FUNCTION (this << stream);
@@ -216,8 +216,8 @@ void Radvd::Send (Ptr<RadvdInterface> config, Ipv6Address dst, bool reschedule)
   m_socket->Bind (Inet6SocketAddress (src, 0));
   m_socket->Connect (Inet6SocketAddress (dst, 0));
 
-  /* as we know interface index that will be used to send RA and 
-   * we always send RA with router's link-local address, we can 
+  /* as we know interface index that will be used to send RA and
+   * we always send RA with router's link-local address, we can
    * calculate checksum here.
    */
   raHdr.CalculatePseudoHeaderChecksum (src, dst, p->GetSize () + raHdr.GetSerializedSize (), 58 /* ICMPv6 */);
@@ -273,7 +273,7 @@ void Radvd::HandleRead (Ptr<Socket> socket)
               for (RadvdInterfaceListCI it = m_configurations.begin (); it != m_configurations.end (); it++)
                 {
                   /* calculate minimum delay between RA */
-                  delay = static_cast<uint64_t> (m_jitter->GetValue (0, MAX_RA_DELAY_TIME) + 0.5); 
+                  delay = static_cast<uint64_t> (m_jitter->GetValue (0, MAX_RA_DELAY_TIME) + 0.5);
                   t = Simulator::Now () + MilliSeconds (delay); /* absolute time of solicited RA */
 
                   /* if our solicited RA is before the next periodic RA, we schedule it */

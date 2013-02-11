@@ -62,68 +62,68 @@ public:
    */
   EpcSgwPgwApplication (const Ptr<VirtualNetDevice> tunDevice, const Ptr<Socket> s1uSocket);
 
-  /** 
+  /**
    * Destructor
    */
   virtual ~EpcSgwPgwApplication (void);
 
 
-  /** 
+  /**
    * Simulates the reception by the PGW of a GTP-C message of type
    * CreateSessionRequest or BearerResourceCommand coming from the
-   * MME. This triggers the creation of a new EPS Bearer. 
-   * 
+   * MME. This triggers the creation of a new EPS Bearer.
+   *
    * \param bearer the specification of the EPS Bearer to be created
    * \param enbS1uAddress the IPv4 address at which the SGW can reach
    * the eNB via the S1-U interface
    * \param tft the Traffic Flow Template related to this bearer
-   * 
+   *
    * \return the TunnelEndpointIdentifier of this EPS bearer
    */
   uint32_t ActivateS1Bearer (Ipv4Address ueAddr, Ipv4Address enbAddr, Ptr<EpcTft> tft);
 
-  
-  /** 
+
+  /**
    * Method to be assigned to the callback of the Gi TUN VirtualNetDevice. It
    * is called when the SGW/PGW receives a data packet from the
    * internet (including IP headers) that is to be sent to the UE via
    * its associated eNB, tunneling IP over GTP-U/UDP/IP.
-   * 
-   * \param packet 
-   * \param source 
-   * \param dest 
-   * \param protocolNumber 
-   * \return true always 
+   *
+   * \param packet
+   * \param source
+   * \param dest
+   * \param protocolNumber
+   * \return true always
    */
   bool RecvFromTunDevice (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber);
 
 
-  /** 
+  /**
    * Method to be assigned to the recv callback of the S1-U socket. It
    * is called when the SGW/PGW receives a data packet from the eNB
-   * that is to be forwarded to the internet. 
-   * 
+   * that is to be forwarded to the internet.
+   *
    * \param socket pointer to the S1-U socket
    */
   void RecvFromS1uSocket (Ptr<Socket> socket);
 
-  /** 
+  /**
    * Send a packet to the internet via the Gi interface of the SGW/PGW
-   * 
-   * \param packet 
+   *
+   * \param packet
    */
   void SendToTunDevice (Ptr<Packet> packet, uint32_t teid);
 
 
-  /** 
+  /**
    * Send a packet to the SGW via the S1-U interface
-   * 
+   *
    * \param packet packet to be sent
    * \param enbS1uAddress the address of the eNB
    * \param teid the Tunnel Enpoint IDentifier
    */
   void SendToS1uSocket (Ptr<Packet> packet, Ipv4Address enbS1uAddress, uint32_t teid);
-  
+
 
 
 private:
@@ -135,34 +135,34 @@ private:
   class UeInfo
   {
   public:
-    UeInfo ();  
+    UeInfo ();
 
-    /** 
-     * 
+    /**
+     *
      * \param tft the Traffic Flow Template of the new bearer to be added
      * \param teid  the TEID of the new bearer
      */
     void AddBearer (Ptr<EpcTft> tft, uint32_t teid);
 
-    /** 
-     * 
-     * 
+    /**
+     *
+     *
      * \param p the IP packet from the internet to be classified
-     * 
+     *
      * \return the corresponding bearer ID > 0 identifying the bearer
      * among all the bearers of this UE;  returns 0 if no bearers
      * matches with the previously declared TFTs
      */
     uint32_t Classify (Ptr<Packet> p);
 
-    /** 
+    /**
      * \return the address of the eNB to which the UE is connected
      */
     Ipv4Address GetEnbAddr ();
 
-    /** 
+    /**
      * set the address of the eNB to which the UE is connected
-     * 
+     *
      * \param addr the address of the eNB
      */
     void SetEnbAddr (Ipv4Address addr);
@@ -178,15 +178,15 @@ private:
   * UDP socket to send and receive GTP-U packets to and from the S1-U interface
   */
   Ptr<Socket> m_s1uSocket;
-  
+
   /**
    * TUN VirtualNetDevice used for tunneling/detunneling IP packets
-   * from/to the internet over GTP-U/UDP/IP on the S1 interface 
+   * from/to the internet over GTP-U/UDP/IP on the S1 interface
    */
   Ptr<VirtualNetDevice> m_tunDevice;
 
   /**
-   * Map telling for each UE address the corresponding UE info 
+   * Map telling for each UE address the corresponding UE info
    */
   std::map<Ipv4Address, UeInfo> m_ueInfoMap;
 

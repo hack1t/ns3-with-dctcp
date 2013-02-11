@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright 2007 University of Washington
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -34,7 +34,7 @@ class Socket;
 class Packet;
 
 /**
- * \ingroup applications 
+ * \ingroup applications
  * \defgroup packetsink PacketSink
  *
  * This application was written to complement OnOffApplication, but it
@@ -42,7 +42,7 @@ class Packet;
  * important to use in multicast situations, so that reception of the layer-2
  * multicast frames of interest are enabled, but it is also useful for
  * unicast as an example of how you can write something simple to receive
- * packets at the application layer.  Also, if an IP stack generates 
+ * packets at the application layer.  Also, if an IP stack generates
  * ICMP Port Unreachable errors, receiving applications will be needed.
  */
 
@@ -56,16 +56,16 @@ class Packet;
  * important to use in multicast situations, so that reception of the layer-2
  * multicast frames of interest are enabled, but it is also useful for
  * unicast as an example of how you can write something simple to receive
- * packets at the application layer.  Also, if an IP stack generates 
+ * packets at the application layer.  Also, if an IP stack generates
  * ICMP Port Unreachable errors, receiving applications will be needed.
  *
- * The constructor specifies the Address (IP address and port) and the 
- * transport protocol to use.   A virtual Receive () method is installed 
+ * The constructor specifies the Address (IP address and port) and the
+ * transport protocol to use.   A virtual Receive () method is installed
  * as a callback on the receiving socket.  By default, when logging is
  * enabled, it prints out the size of packets and their address, but
  * we intend to also add a tracing source to Receive() at a later date.
  */
-class PacketSink : public Application 
+class PacketSink : public Application
 {
 public:
   static TypeId GetTypeId (void);
@@ -87,7 +87,7 @@ public:
    * \return list of pointers to accepted sockets
    */
   std::list<Ptr<Socket> > GetAcceptedSockets (void) const;
- 
+
 protected:
   virtual void DoDispose (void);
 private:
@@ -100,7 +100,7 @@ private:
   void HandlePeerClose (Ptr<Socket>);
   void HandlePeerError (Ptr<Socket>);
 
-  // In the case of TCP, each socket accept returns a new socket, so the 
+  // In the case of TCP, each socket accept returns a new socket, so the
   // listening socket is stored seperately from the accepted sockets
   Ptr<Socket>     m_socket;       // Listening socket
   std::list<Ptr<Socket> > m_socketList; //the accepted sockets

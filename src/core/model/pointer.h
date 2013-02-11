@@ -65,7 +65,7 @@ private:
 };
 
 
-class PointerChecker : public AttributeChecker 
+class PointerChecker : public AttributeChecker
 {
 public:
   virtual TypeId GetPointeeTypeId (void) const = 0;
@@ -137,14 +137,14 @@ PointerValue::PointerValue (const Ptr<T> &object)
 }
 
 template <typename T>
-void 
+void
 PointerValue::Set (const Ptr<T> &object)
 {
   m_value = object;
 }
 
 template <typename T>
-Ptr<T> 
+Ptr<T>
 PointerValue::Get (void) const
 {
   T *v = dynamic_cast<T *> (PeekPointer (m_value));
@@ -158,7 +158,7 @@ PointerValue::operator Ptr<T> () const
 }
 
 template <typename T>
-bool 
+bool
 PointerValue::GetAccessor (Ptr<T> &v) const
 {
   Ptr<T> ptr = dynamic_cast<T*> (PeekPointer (m_value));

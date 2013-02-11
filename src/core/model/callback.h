@@ -34,17 +34,17 @@ namespace ns3 {
 
 /***
  * \internal
- * This code was originally written based on the techniques 
+ * This code was originally written based on the techniques
  * described in http://www.codeproject.com/cpp/TTLFunction.asp
  * It was subsequently rewritten to follow the architecture
- * outlined in "Modern C++ Design" by Andrei Alexandrescu in 
+ * outlined in "Modern C++ Design" by Andrei Alexandrescu in
  * chapter 5, "Generalized Functors".
  *
  * This code uses:
  *   - default template parameters to saves users from having to
  *     specify empty parameters when the number of parameters
  *     is smaller than the maximum supported number
- *   - the pimpl idiom: the Callback class is passed around by 
+ *   - the pimpl idiom: the Callback class is passed around by
  *     value and delegates the crux of the work to its pimpl
  *     pointer.
  *   - two pimpl implementations which derive from CallbackImpl
@@ -54,7 +54,7 @@ namespace ns3 {
  *   - a reference list implementation to implement the Callback's
  *     value semantics.
  *
- * This code most notably departs from the alexandrescu 
+ * This code most notably departs from the alexandrescu
  * implementation in that it does not use type lists to specify
  * and pass around the types of the callback arguments.
  * Of course, it also does not use copy-destruction semantics
@@ -193,7 +193,7 @@ public:
     return m_functor (a1,a2,a3,a4,a5,a6,a7,a8,a9);
   }
   virtual bool IsEqual (Ptr<const CallbackImplBase> other) const {
-    FunctorCallbackImpl<T,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> const *otherDerived = 
+    FunctorCallbackImpl<T,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> const *otherDerived =
       dynamic_cast<FunctorCallbackImpl<T,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> const *> (PeekPointer (other));
     if (otherDerived == 0)
       {
@@ -247,7 +247,7 @@ public:
     return ((CallbackTraits<OBJ_PTR>::GetReference (m_objPtr)).*m_memPtr)(a1, a2, a3, a4, a5, a6, a7, a8, a9);
   }
   virtual bool IsEqual (Ptr<const CallbackImplBase> other) const {
-    MemPtrCallbackImpl<OBJ_PTR,MEM_PTR,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> const *otherDerived = 
+    MemPtrCallbackImpl<OBJ_PTR,MEM_PTR,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> const *otherDerived =
       dynamic_cast<MemPtrCallbackImpl<OBJ_PTR,MEM_PTR,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> const *> (PeekPointer (other));
     if (otherDerived == 0)
       {
@@ -301,7 +301,7 @@ public:
     return m_functor (m_a,a1,a2,a3,a4,a5,a6,a7,a8);
   }
   virtual bool IsEqual (Ptr<const CallbackImplBase> other) const {
-    BoundFunctorCallbackImpl<T,R,TX,T1,T2,T3,T4,T5,T6,T7,T8> const *otherDerived = 
+    BoundFunctorCallbackImpl<T,R,TX,T1,T2,T3,T4,T5,T6,T7,T8> const *otherDerived =
       dynamic_cast<BoundFunctorCallbackImpl<T,R,TX,T1,T2,T3,T4,T5,T6,T7,T8> const *> (PeekPointer (other));
     if (otherDerived == 0)
       {
@@ -355,13 +355,13 @@ protected:
  * user intervention which allows you to pass around Callback
  * instances by value.
  *
- * Sample code which shows how to use this class template 
+ * Sample code which shows how to use this class template
  * as well as the function templates \ref MakeCallback :
  * \include src/core/examples/main-callback.cc
  */
 
-template<typename R, 
-         typename T1 = empty, typename T2 = empty, 
+template<typename R,
+         typename T1 = empty, typename T2 = empty,
          typename T3 = empty, typename T4 = empty,
          typename T5 = empty, typename T6 = empty,
          typename T7 = empty, typename T8 = empty,
@@ -373,7 +373,7 @@ public:
   // There are two dummy args below to ensure that this constructor is
   // always properly disambiguated by the c++ compiler
   template <typename FUNCTOR>
-  Callback (FUNCTOR const &functor, bool, bool) 
+  Callback (FUNCTOR const &functor, bool, bool)
     : CallbackBase (Create<FunctorCallbackImpl<FUNCTOR,R,T1,T2,T3,T4,T5,T6,T7,T8,T9> > (functor))
   {}
 
@@ -898,14 +898,14 @@ Callback<R> MakeBoundCallback (R (*fnPtr)(TX), ARG a) {
   return Callback<R> (impl);
 }
 
-template <typename R, typename TX, typename ARG, 
+template <typename R, typename TX, typename ARG,
           typename T1>
 Callback<R,T1> MakeBoundCallback (R (*fnPtr)(TX,T1), ARG a) {
   Ptr<CallbackImpl<R,T1,empty,empty,empty,empty,empty,empty,empty,empty> > impl =
     Create<BoundFunctorCallbackImpl<R (*)(TX,T1),R,TX,T1,empty,empty,empty,empty,empty,empty,empty> > (fnPtr, a);
   return Callback<R,T1> (impl);
 }
-template <typename R, typename TX, typename ARG, 
+template <typename R, typename TX, typename ARG,
           typename T1, typename T2>
 Callback<R,T1,T2> MakeBoundCallback (R (*fnPtr)(TX,T1,T2), ARG a) {
   Ptr<CallbackImpl<R,T1,T2,empty,empty,empty,empty,empty,empty,empty> > impl =

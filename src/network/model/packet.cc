@@ -30,24 +30,24 @@ namespace ns3 {
 
 uint32_t Packet::m_globalUid = 0;
 
-TypeId 
+TypeId
 ByteTagIterator::Item::GetTypeId (void) const
 {
   return m_tid;
 }
-uint32_t 
+uint32_t
 ByteTagIterator::Item::GetStart (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_start;
 }
-uint32_t 
+uint32_t
 ByteTagIterator::Item::GetEnd (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_end;
 }
-void 
+void
 ByteTagIterator::Item::GetTag (Tag &tag) const
 {
   NS_LOG_FUNCTION (this << &tag);
@@ -127,7 +127,7 @@ PacketTagIterator::Item::GetTag (Tag &tag) const
 }
 
 
-Ptr<Packet> 
+Ptr<Packet>
 Packet::Copy (void) const
 {
   // we need to invoke the copy constructor directly
@@ -141,10 +141,10 @@ Packet::Packet ()
   : m_buffer (),
     m_byteTagList (),
     m_packetTagList (),
-    /* The upper 32 bits of the packet id in 
+    /* The upper 32 bits of the packet id in
      * metadata is for the system id. For non-
-     * distributed simulations, this is simply 
-     * zero.  The lower 32 bits are for the 
+     * distributed simulations, this is simply
+     * zero.  The lower 32 bits are for the
      * global UID
      */
     m_metadata (static_cast<uint64_t> (Simulator::GetSystemId ()) << 32 | m_globalUid, 0),
@@ -175,7 +175,7 @@ Packet::operator = (const Packet &o)
   m_byteTagList = o.m_byteTagList;
   m_packetTagList = o.m_packetTagList;
   m_metadata = o.m_metadata;
-  o.m_nixVector ? m_nixVector = o.m_nixVector->Copy () 
+  o.m_nixVector ? m_nixVector = o.m_nixVector->Copy ()
     : m_nixVector = 0;
   return *this;
 }
@@ -184,10 +184,10 @@ Packet::Packet (uint32_t size)
   : m_buffer (size),
     m_byteTagList (),
     m_packetTagList (),
-    /* The upper 32 bits of the packet id in 
+    /* The upper 32 bits of the packet id in
      * metadata is for the system id. For non-
-     * distributed simulations, this is simply 
-     * zero.  The lower 32 bits are for the 
+     * distributed simulations, this is simply
+     * zero.  The lower 32 bits are for the
      * global UID
      */
     m_metadata (static_cast<uint64_t> (Simulator::GetSystemId ()) << 32 | m_globalUid, size),
@@ -212,10 +212,10 @@ Packet::Packet (uint8_t const*buffer, uint32_t size)
   : m_buffer (),
     m_byteTagList (),
     m_packetTagList (),
-    /* The upper 32 bits of the packet id in 
+    /* The upper 32 bits of the packet id in
      * metadata is for the system id. For non-
-     * distributed simulations, this is simply 
-     * zero.  The lower 32 bits are for the 
+     * distributed simulations, this is simply
+     * zero.  The lower 32 bits are for the
      * global UID
      */
     m_metadata (static_cast<uint64_t> (Simulator::GetSystemId ()) << 32 | m_globalUid, size),
@@ -228,7 +228,7 @@ Packet::Packet (uint8_t const*buffer, uint32_t size)
   i.Write (buffer, size);
 }
 
-Packet::Packet (const Buffer &buffer,  const ByteTagList &byteTagList, 
+Packet::Packet (const Buffer &buffer,  const ByteTagList &byteTagList,
                 const PacketTagList &packetTagList, const PacketMetadata &metadata)
   : m_buffer (buffer),
     m_byteTagList (byteTagList),
@@ -264,7 +264,7 @@ Packet::GetNixVector (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_nixVector;
-} 
+}
 
 void
 Packet::AddHeader (const Header &header)
@@ -330,7 +330,7 @@ Packet::PeekTrailer (Trailer &trailer)
   return deserialized;
 }
 
-void 
+void
 Packet::AddAtEnd (Ptr<const Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
@@ -338,7 +338,7 @@ Packet::AddAtEnd (Ptr<const Packet> packet)
   uint32_t bEnd = packet->m_buffer.GetCurrentEndOffset ();
   m_buffer.AddAtEnd (packet->m_buffer);
   uint32_t appendPrependOffset = m_buffer.GetCurrentEndOffset () - packet->m_buffer.GetSize ();
-  m_byteTagList.AddAtEnd (m_buffer.GetCurrentStartOffset () - aStart, 
+  m_byteTagList.AddAtEnd (m_buffer.GetCurrentStartOffset () - aStart,
                           appendPrependOffset);
   ByteTagList copy = packet->m_byteTagList;
   copy.AddAtStart (m_buffer.GetCurrentEndOffset () - bEnd,
@@ -359,14 +359,14 @@ Packet::AddPaddingAtEnd (uint32_t size)
     }
   m_metadata.AddPaddingAtEnd (size);
 }
-void 
+void
 Packet::RemoveAtEnd (uint32_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_buffer.RemoveAtEnd (size);
   m_metadata.RemoveAtEnd (size);
 }
-void 
+void
 Packet::RemoveAtStart (uint32_t size)
 {
   NS_LOG_FUNCTION (this << size);
@@ -374,7 +374,7 @@ Packet::RemoveAtStart (uint32_t size)
   m_metadata.RemoveAtStart (size);
 }
 
-void 
+void
 Packet::RemoveAllByteTags (void)
 {
   NS_LOG_FUNCTION (this);
@@ -388,13 +388,13 @@ Packet::PeekData (void) const
   uint32_t oldStart = m_buffer.GetCurrentStartOffset ();
   uint8_t const * data = m_buffer.PeekData ();
   uint32_t newStart = m_buffer.GetCurrentStartOffset ();
- 
+
   // Update tag offsets if buffer offsets were changed
   const_cast<ByteTagList &>(m_byteTagList).AddAtStart (newStart - oldStart, newStart);
   return data;
 }
 
-uint32_t 
+uint32_t
 Packet::CopyData (uint8_t *buffer, uint32_t size) const
 {
   NS_LOG_FUNCTION (this << &buffer << size);
@@ -408,14 +408,14 @@ Packet::CopyData (std::ostream *os, uint32_t size) const
   return m_buffer.CopyData (os, size);
 }
 
-uint64_t 
+uint64_t
 Packet::GetUid (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_metadata.GetUid ();
 }
 
-void 
+void
 Packet::PrintByteTags (std::ostream &os) const
 {
   NS_LOG_FUNCTION (this << &os);
@@ -446,7 +446,7 @@ Packet::PrintByteTags (std::ostream &os) const
     }
 }
 
-void 
+void
 Packet::Print (std::ostream &os) const
 {
   NS_LOG_FUNCTION (this << &os);
@@ -501,7 +501,7 @@ Packet::Print (std::ostream &os) const
 #if 0
   // The code below will work only if headers and trailers
   // define the right attributes which is not the case for
-  // now. So, as a temporary measure, we use the 
+  // now. So, as a temporary measure, we use the
   // headers' and trailers' Print method as shown above.
   PacketMetadata::ItemIterator i = m_metadata.BeginItem (m_buffer);
   while (i.HasNext ())
@@ -564,7 +564,7 @@ Packet::Print (std::ostream &os) const
 #endif
 }
 
-PacketMetadata::ItemIterator 
+PacketMetadata::ItemIterator
 Packet::BeginItem (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -602,7 +602,7 @@ uint32_t Packet::GetSerializedSize (void) const
   else
     {
       // if no nix-vector, still have to add 4-bytes
-      // to account for the entry of total size for 
+      // to account for the entry of total size for
       // nix-vector in the buffer
       size += 4;
     }
@@ -611,24 +611,24 @@ uint32_t Packet::GetSerializedSize (void) const
   //XXX
   //size += m_tags.GetSerializedSize ();
 
-  // increment total size by size of meta-data 
+  // increment total size by size of meta-data
   // ensuring 4-byte boundary
   size += ((m_metadata.GetSerializedSize () + 3) & (~3));
 
   // add 4-bytes for entry of total length of meta-data
   size += 4;
 
-  // increment total size by size of buffer 
+  // increment total size by size of buffer
   // ensuring 4-byte boundary
   size += ((m_buffer.GetSerializedSize () + 3) & (~3));
 
-  // add 4-bytes for entry of total length of buffer 
+  // add 4-bytes for entry of total length of buffer
   size += 4;
 
   return size;
 }
 
-uint32_t 
+uint32_t
 Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
 {
   NS_LOG_FUNCTION (this << &buffer << maxSize);
@@ -642,13 +642,13 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
       if (size + nixSize <= maxSize)
         {
           // put the total length of nix-vector in the
-          // buffer. this includes 4-bytes for total 
+          // buffer. this includes 4-bytes for total
           // length itself
           *p++ = nixSize + 4;
           size += nixSize;
 
           // serialize the nix-vector
-          uint32_t serialized = 
+          uint32_t serialized =
             m_nixVector->Serialize (p, nixSize);
           if (serialized)
             {
@@ -661,15 +661,15 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
               return 0;
             }
         }
-      else 
+      else
         {
           return 0;
         }
     }
   else
-    { 
-      // no nix vector, set zero length, 
-      // ie 4-bytes, since it must include 
+    {
+      // no nix vector, set zero length,
+      // ie 4-bytes, since it must include
       // length for itself
       if (size + 4 <= maxSize)
         {
@@ -690,14 +690,14 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
   if (size + metaSize <= maxSize)
     {
       // put the total length of metadata in the
-      // buffer. this includes 4-bytes for total 
+      // buffer. this includes 4-bytes for total
       // length itself
       *p++ = metaSize + 4;
       size += metaSize;
 
       // serialize the metadata
-      uint32_t serialized = 
-        m_metadata.Serialize (reinterpret_cast<uint8_t *> (p), metaSize); 
+      uint32_t serialized =
+        m_metadata.Serialize (reinterpret_cast<uint8_t *> (p), metaSize);
       if (serialized)
         {
           // increment p by metaSize bytes
@@ -719,13 +719,13 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
   if (size + bufSize <= maxSize)
     {
       // put the total length of the buffer in the
-      // buffer. this includes 4-bytes for total 
+      // buffer. this includes 4-bytes for total
       // length itself
       *p++ = bufSize + 4;
       size += bufSize;
 
       // serialize the buffer
-      uint32_t serialized = 
+      uint32_t serialized =
         m_buffer.Serialize (reinterpret_cast<uint8_t *> (p), bufSize);
       if (serialized)
         {
@@ -733,7 +733,7 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
           // ensuring 4-byte boundary
           p += ((bufSize+3) & (~3)) / 4;
         }
-      else 
+      else
         {
           return 0;
         }
@@ -747,7 +747,7 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
   return 1;
 }
 
-uint32_t 
+uint32_t
 Packet::Deserialize (const uint8_t* buffer, uint32_t size)
 {
   NS_LOG_FUNCTION (this << &buffer << size);
@@ -758,7 +758,7 @@ Packet::Deserialize (const uint8_t* buffer, uint32_t size)
   NS_ASSERT (!m_nixVector);
   uint32_t nixSize = *p++;
 
-  // if size less than nixSize, the buffer 
+  // if size less than nixSize, the buffer
   // will be overrun, assert
   NS_ASSERT (size >= nixSize);
 
@@ -788,28 +788,28 @@ Packet::Deserialize (const uint8_t* buffer, uint32_t size)
   // read metadata
   uint32_t metaSize = *p++;
 
-  // if size less than metaSize, the buffer 
+  // if size less than metaSize, the buffer
   // will be overrun, assert
   NS_ASSERT (size >= metaSize);
 
   size -= metaSize;
 
-  uint32_t metadataDeserialized = 
+  uint32_t metadataDeserialized =
     m_metadata.Deserialize (reinterpret_cast<const uint8_t *> (p), metaSize);
   if (!metadataDeserialized)
     {
-      // meta-data not deserialized 
+      // meta-data not deserialized
       // completely
       return 0;
     }
-  // increment p by metaSize ensuring 
+  // increment p by metaSize ensuring
   // 4-byte boundary
   p += ((((metaSize - 4) + 3) & (~3)) / 4);
 
   // read buffer contents
   uint32_t bufSize = *p++;
 
-  // if size less than bufSize, the buffer 
+  // if size less than bufSize, the buffer
   // will be overrun, assert
   NS_ASSERT (size >= bufSize);
 
@@ -819,34 +819,34 @@ Packet::Deserialize (const uint8_t* buffer, uint32_t size)
     m_buffer.Deserialize (reinterpret_cast<const uint8_t *> (p), bufSize);
   if (!bufferDeserialized)
     {
-      // buffer not deserialized 
+      // buffer not deserialized
       // completely
       return 0;
     }
 
-  // return zero if did not deserialize the 
+  // return zero if did not deserialize the
   // number of expected bytes
   return (size == 0);
 }
 
-void 
+void
 Packet::AddByteTag (const Tag &tag) const
 {
   NS_LOG_FUNCTION (this << &tag);
   ByteTagList *list = const_cast<ByteTagList *> (&m_byteTagList);
-  TagBuffer buffer = list->Add (tag.GetInstanceTypeId (), tag.GetSerializedSize (), 
+  TagBuffer buffer = list->Add (tag.GetInstanceTypeId (), tag.GetSerializedSize (),
                                 m_buffer.GetCurrentStartOffset (),
                                 m_buffer.GetCurrentEndOffset ());
   tag.Serialize (buffer);
 }
-ByteTagIterator 
+ByteTagIterator
 Packet::GetByteTagIterator (void) const
 {
   NS_LOG_FUNCTION (this);
   return ByteTagIterator (m_byteTagList.Begin (m_buffer.GetCurrentStartOffset (), m_buffer.GetCurrentEndOffset ()));
 }
 
-bool 
+bool
 Packet::FindFirstMatchingByteTag (Tag &tag) const
 {
   NS_LOG_FUNCTION (this << &tag);
@@ -864,34 +864,34 @@ Packet::FindFirstMatchingByteTag (Tag &tag) const
   return false;
 }
 
-void 
+void
 Packet::AddPacketTag (const Tag &tag) const
 {
   NS_LOG_FUNCTION (this << &tag);
   m_packetTagList.Add (tag);
 }
-bool 
+bool
 Packet::RemovePacketTag (Tag &tag)
 {
   NS_LOG_FUNCTION (this << &tag);
   bool found = m_packetTagList.Remove (tag);
   return found;
 }
-bool 
+bool
 Packet::PeekPacketTag (Tag &tag) const
 {
   NS_LOG_FUNCTION (this << &tag);
   bool found = m_packetTagList.Peek (tag);
   return found;
 }
-void 
+void
 Packet::RemoveAllPacketTags (void)
 {
   NS_LOG_FUNCTION (this);
   m_packetTagList.RemoveAll ();
 }
 
-void 
+void
 Packet::PrintPacketTags (std::ostream &os) const
 {
   NS_LOG_FUNCTION (this << &os);
@@ -915,7 +915,7 @@ Packet::PrintPacketTags (std::ostream &os) const
     }
 }
 
-PacketTagIterator 
+PacketTagIterator
 Packet::GetPacketTagIterator (void) const
 {
   NS_LOG_FUNCTION (this);

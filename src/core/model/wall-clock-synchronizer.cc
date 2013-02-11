@@ -33,7 +33,7 @@ WallClockSynchronizer::WallClockSynchronizer ()
   NS_LOG_FUNCTION (this);
 //
 // In Linux, the basic timekeeping unit is derived from a variable called HZ
-// HZ is the frequency in hertz of the system timer.  The system timer fires 
+// HZ is the frequency in hertz of the system timer.  The system timer fires
 // every 1/HZ seconds and a counter, called the jiffies counter is incremented
 // at each tick.  The time between ticks is called a jiffy (American slang for
 // a short period of time).  The ticking of the jiffies counter is how the
@@ -54,8 +54,8 @@ WallClockSynchronizer::WallClockSynchronizer ()
 // In order to deal with this, we are going to do a spin-wait if the simulator
 // requires a delay less than a jiffy.  This is on the order of one millisecond
 // (999848 ns) on the ns-regression machine.
-// 
-// If the underlying OS does not support posix clocks, we'll just assume a 
+//
+// If the underlying OS does not support posix clocks, we'll just assume a
 // one millisecond quantum and deal with this as best we can
 
 #ifdef CLOCK_REALTIME
@@ -92,7 +92,7 @@ WallClockSynchronizer::DoSetOrigin (uint64_t ns)
 {
   NS_LOG_FUNCTION (this << ns);
 //
-// In order to make sure we're really locking the simulation time to some 
+// In order to make sure we're really locking the simulation time to some
 // wall-clock time, we need to be able to compare that simulation time to
 // that wall-clock time.  The wall clock will have been running for some
 // long time and will probably have a huge count of nanoseconds in it.  We
@@ -108,7 +108,7 @@ WallClockSynchronizer::DoGetDrift (uint64_t ns)
 {
   NS_LOG_FUNCTION (this << ns);
 //
-// In order to make sure we're really locking the simulation time to some 
+// In order to make sure we're really locking the simulation time to some
 // wall-clock time, we need to be able to compare that simulation time to
 // that wall-clock time.  In DoSetOrigin we saved the real time at the start
 // of the simulation away.  This is the place where we subtract it from "now"
@@ -117,9 +117,9 @@ WallClockSynchronizer::DoGetDrift (uint64_t ns)
 // from the normalized simulation time in nanoseconds that is passed in as
 // the parameter ns.  We return an integer difference, but in reality all of
 // the mechanisms that cause wall-clock to simuator time drift cause events
-// to be late.  That means that the wall-clock will be higher than the 
-// simulation time and drift will be positive.  I would be astonished to 
-// see a negative drift, but the possibility is admitted for other 
+// to be late.  That means that the wall-clock will be higher than the
+// simulation time and drift will be positive.  I would be astonished to
+// see a negative drift, but the possibility is admitted for other
 // implementations; and we'll use the ability to report an early result in
 // DoSynchronize below.
 //
@@ -135,7 +135,7 @@ WallClockSynchronizer::DoGetDrift (uint64_t ns)
     }
   else
     {
-// 
+//
 // Real time (nsNow) is smaller/earlier than the simulator time (ns).  We are
 // ahead of real time and the difference (drift) is negative.
 //
@@ -152,20 +152,20 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
 // simulator proper -- a current simulation time (nsCurrent) and a simulation
 // time to delay which identifies the time the next event is supposed to fire.
 //
-// The first thing we need to do is to (try and) correct for any realtime 
-// drift that has happened in the system.  In this implementation, we realize 
-// that all mechanisms for drift will cause the drift to be such that the 
-// realtime is greater than the simulation time.  This typically happens when 
+// The first thing we need to do is to (try and) correct for any realtime
+// drift that has happened in the system.  In this implementation, we realize
+// that all mechanisms for drift will cause the drift to be such that the
+// realtime is greater than the simulation time.  This typically happens when
 // our process is put to sleep for a given time, but actually sleeps for
 // longer.  So, what we want to do is to "catch up" to realtime and delay for
-// less time than we are actually asked to delay.  DriftCorrect will return a 
+// less time than we are actually asked to delay.  DriftCorrect will return a
 // number from 0 to nsDelay corresponding to the amount of catching-up we
 // need to do.  If we are more than nsDelay behind, we do not wait at all.
 //
-// Note that it will be impossible to catch up if the amount of drift is 
+// Note that it will be impossible to catch up if the amount of drift is
 // cumulatively greater than the amount of delay between events.  The method
 // GetDrift () is available to clients of the syncrhonizer to keep track of
-// the cumulative drift.  The client can assert if the drift gets out of 
+// the cumulative drift.  The client can assert if the drift gets out of
 // hand, print warning messages, or just ignore the situation and hope it will
 // go away.
 //
@@ -177,7 +177,7 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
 // in the comments for the constructor where jiffies and jiffy resolution is
 // explained.
 //
-// Here, I'll just say that we need that the jiffy is the minimum resolution 
+// Here, I'll just say that we need that the jiffy is the minimum resolution
 // of the system clock.  It can only sleep in blocks of time equal to a jiffy.
 // If we want to be more accurate than a jiffy (we do) then we need to sleep
 // for some number of jiffies and then busy wait for any leftover time.
@@ -185,10 +185,10 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
   uint64_t numberJiffies = ns / m_jiffy;
   NS_LOG_INFO ("Synchronize numberJiffies = " << numberJiffies);
 //
-// This is where the real world interjects its very ugly head.  The code 
+// This is where the real world interjects its very ugly head.  The code
 // immediately below reflects the fact that a sleep is actually quite probably
 // going to end up sleeping for some number of jiffies longer than you wanted.
-// This is because your system is going to be off doing other unimportant 
+// This is because your system is going to be off doing other unimportant
 // stuff during that extra time like running file systems and networks.  What
 // we want to do is to ask the system to sleep enough less than the requested
 // delay so that it comes back early most of the time (coming back early is
@@ -208,12 +208,12 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
   if (numberJiffies > 3)
     {
       NS_LOG_INFO ("SleepWait for " << numberJiffies * m_jiffy << " ns");
-      NS_LOG_INFO ("SleepWait until " << nsCurrent + numberJiffies * m_jiffy 
+      NS_LOG_INFO ("SleepWait until " << nsCurrent + numberJiffies * m_jiffy
                                       << " ns");
 //
 // SleepWait is interruptible.  If it returns true it meant that the sleep
-// went until the end.  If it returns false, it means that the sleep was 
-// interrupted by a Signal.  In this case, we need to return and let the 
+// went until the end.  If it returns false, it means that the sleep was
+// interrupted by a Signal.  In this case, we need to return and let the
 // simulator re-evaluate what to do.
 //
       if (SleepWait ((numberJiffies - 3) * m_jiffy) == false)
@@ -224,8 +224,8 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
     }
   NS_LOG_INFO ("Done with SleepWait");
 //
-// We asked the system to sleep for some number of jiffies, but that doesn't 
-// mean we actually did.  Let's re-evaluate what we need to do here.  Maybe 
+// We asked the system to sleep for some number of jiffies, but that doesn't
+// mean we actually did.  Let's re-evaluate what we need to do here.  Maybe
 // we're already late.  Probably the "real" delay time left has little to do
 // with what we would calculate it to be naively.
 //
@@ -235,7 +235,7 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
 // corresponds to nsCurrent + nsDelay (in simulation time).  We have a handy
 // function to do just that -- we ask for the time the realtime clock has
 // drifted away from the simulation clock.  That's our answer.  If the drift
-// is negative, we're early and we need to busy wait for that number of 
+// is negative, we're early and we need to busy wait for that number of
 // nanoseconds.  The place were we want to be is described by the parameters
 // we were passed by the simulator.
 //
@@ -252,9 +252,9 @@ WallClockSynchronizer::DoSynchronize (uint64_t nsCurrent, uint64_t nsDelay)
     }
 //
 // There are some number of nanoseconds left over and we need to wait until
-// the time defined by nsDrift.  We'll do a SpinWait since the usual case 
+// the time defined by nsDrift.  We'll do a SpinWait since the usual case
 // will be that we are doing this Spinwait after we've gotten a rough delay
-// using the SleepWait above.  If SpinWait completes to the end, it will 
+// using the SleepWait above.  If SpinWait completes to the end, it will
 // return true; if it is interrupted by a signal it will return false.
 //
   NS_LOG_INFO ("SpinWait until " << nsCurrent + nsDelay);
@@ -300,11 +300,11 @@ WallClockSynchronizer::SpinWait (uint64_t ns)
 // or the condition variable becomes true.  The condition becomes true if
 // an outside entity (a network device receives a packet, sets the condition
 // and signals the scheduler it needs to re-evaluate).
-// 
+//
 // We just sit here and spin, wasting CPU cycles until we get to the right
 // time or are told to leave.
 //
-  for (;;) 
+  for (;;)
     {
       if (GetNormalizedRealtime () >= ns)
         {
@@ -333,10 +333,10 @@ WallClockSynchronizer::SleepWait (uint64_t ns)
 // event happens that causes a schedule event in the simulator.  This newly
 // scheduled event might be before the time we are waiting until, so we have
 // to break out of both the SleepWait and the following SpinWait to go back
-// and reschedule/resynchronize taking the new event into account.  The 
+// and reschedule/resynchronize taking the new event into account.  The
 // SystemCondition we have saved in m_condition takes care of this for us.
 //
-// This call will return if the timeout expires OR if the condition is 
+// This call will return if the timeout expires OR if the condition is
 // set true by a call to WallClockSynchronizer::SetCondition (true) followed
 // by a call to WallClockSynchronizer::Signal().  In either case, we are done
 // waiting.  If the timeout happened, we TimedWait returns true; if a Signal
@@ -412,7 +412,7 @@ WallClockSynchronizer::TimevalToNs (struct timeval *tv)
 
 void
 WallClockSynchronizer::TimevalAdd (
-  struct timeval *tv1, 
+  struct timeval *tv1,
   struct timeval *tv2,
   struct timeval *result)
 {

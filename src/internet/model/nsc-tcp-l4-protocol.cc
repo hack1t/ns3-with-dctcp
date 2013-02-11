@@ -54,7 +54,7 @@ NS_OBJECT_ENSURE_REGISTERED (NscTcpL4Protocol);
 /* see http://www.iana.org/assignments/protocol-numbers */
 const uint8_t NscTcpL4Protocol::PROT_NUMBER = 6;
 
-class NscInterfaceImpl : public ISendCallback, public IInterruptCallback 
+class NscInterfaceImpl : public ISendCallback, public IInterruptCallback
 {
 public:
   NscInterfaceImpl (Ptr<NscTcpL4Protocol> prot);
@@ -90,9 +90,9 @@ NscInterfaceImpl::gettime (unsigned int *sec, unsigned int *usec)
 
 #undef NS_LOG_APPEND_CONTEXT
 #define NS_LOG_APPEND_CONTEXT                                   \
-  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; } 
+  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; }
 
-TypeId 
+TypeId
 NscTcpL4Protocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::NscTcpL4Protocol")
@@ -146,12 +146,12 @@ NscTcpL4Protocol::SetNscLibrary (const std::string &soname)
     }
 }
 
-std::string 
+std::string
 NscTcpL4Protocol::GetNscLibrary () const
 {
   return m_nscLibrary;
 }
-void 
+void
 NscTcpL4Protocol::SetNode (Ptr<Node> node)
 {
   m_node = node;
@@ -189,7 +189,7 @@ NscTcpL4Protocol::SetNode (Ptr<Node> node)
 
 void
 NscTcpL4Protocol::NotifyNewAggregate ()
-{ 
+{
   if (m_node == 0)
     {
       Ptr<Node>node = this->GetObject<Node> ();
@@ -210,12 +210,12 @@ NscTcpL4Protocol::NotifyNewAggregate ()
   Object::NotifyNewAggregate ();
 }
 
-int 
+int
 NscTcpL4Protocol::GetProtocolNumber (void) const
 {
   return PROT_NUMBER;
 }
-int 
+int
 NscTcpL4Protocol::GetVersion (void) const
 {
   return 2;
@@ -294,7 +294,7 @@ NscTcpL4Protocol::Allocate (Ipv4Address localAddress, uint16_t localPort,
                                 peerAddress, peerPort);
 }
 
-void 
+void
 NscTcpL4Protocol::DeAllocate (Ipv4EndPoint *endPoint)
 {
   NS_LOG_FUNCTION (this << endPoint);

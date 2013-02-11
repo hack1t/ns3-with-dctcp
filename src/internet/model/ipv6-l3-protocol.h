@@ -58,7 +58,7 @@ class Ipv6AutoconfiguredPrefix;
 class Ipv6L3Protocol : public Ipv6
 {
 public:
-  /** 
+  /**
    * \brief Get the type ID of this class.
    * \return type ID
    */
@@ -73,7 +73,7 @@ public:
    * \enum DropReason
    * \brief Reason why a packet has been dropped.
    */
-  enum DropReason 
+  enum DropReason
   {
     DROP_TTL_EXPIRED = 1, /**< Packet TTL has expired */
     DROP_NO_ROUTE, /**< No route to host */
@@ -373,17 +373,17 @@ private:
 
   /**
    * \brief Callback to trace TX (transmission) packets.
-   */ 
+   */
   TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_txTrace;
 
   /**
    * \brief Callback to trace RX (reception) packets.
-   */ 
+   */
   TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_rxTrace;
 
   /**
    * \brief Callback to trace drop packets.
-   */ 
+   */
   TracedCallback<const Ipv6Header &, Ptr<const Packet>, DropReason, Ptr<Ipv6>, uint32_t> m_dropTrace;
 
   /**
@@ -412,7 +412,7 @@ private:
 
   /**
    * \brief Send packet with route.
-   * \param route route 
+   * \param route route
    * \param packet packet to send
    * \param ipHeader IPv6 header to add to the packet
    */
@@ -420,7 +420,7 @@ private:
 
   /**
    * \brief Forward a packet.
-   * \param rtentry route 
+   * \param rtentry route
    * \param p packet to forward
    * \param header IPv6 header to add to the packet
    */
@@ -428,7 +428,7 @@ private:
 
   /**
    * \brief Forward a packet in multicast.
-   * \param mrtentry route 
+   * \param mrtentry route
    * \param p packet to forward
    * \param header IPv6 header to add to the packet
    */

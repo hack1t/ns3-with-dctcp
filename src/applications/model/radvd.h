@@ -35,7 +35,7 @@ namespace ns3
 {
 
 /**
- * \ingroup applications 
+ * \ingroup applications
  * \defgroup radvd Radvd
  */
 

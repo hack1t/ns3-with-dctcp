@@ -35,7 +35,7 @@ namespace ns3 {
 class DataRate;
 
 /**
- * \brief A helper to make it easier to instantiate an ns3::OnOffApplication 
+ * \brief A helper to make it easier to instantiate an ns3::OnOffApplication
  * on a set of nodes.
  */
 class OnOffHelper
@@ -63,7 +63,7 @@ public:
 
   /**
    * Helper function to set a constant rate source.  Equivalent to
-   * setting the attributes OnTime to constant 1000 seconds, OffTime to 
+   * setting the attributes OnTime to constant 1000 seconds, OffTime to
    * constant 0 seconds, and the DataRate and PacketSize set accordingly
    *
    * \param dataRate DataRate object for the sending rate
@@ -75,14 +75,14 @@ public:
    * Install an ns3::OnOffApplication on each node of the input container
    * configured with all the attributes set with SetAttribute.
    *
-   * \param c NodeContainer of the set of nodes on which an OnOffApplication 
+   * \param c NodeContainer of the set of nodes on which an OnOffApplication
    * will be installed.
    * \returns Container of Ptr to the applications installed.
    */
   ApplicationContainer Install (NodeContainer c) const;
 
   /**
-   * Install an ns3::OnOffApplication on the node configured with all the 
+   * Install an ns3::OnOffApplication on the node configured with all the
    * attributes set with SetAttribute.
    *
    * \param node The node on which an OnOffApplication will be installed.
@@ -91,7 +91,7 @@ public:
   ApplicationContainer Install (Ptr<Node> node) const;
 
   /**
-   * Install an ns3::OnOffApplication on the node configured with all the 
+   * Install an ns3::OnOffApplication on the node configured with all the
    * attributes set with SetAttribute.
    *
    * \param nodeName The node on which an OnOffApplication will be installed.
@@ -115,7 +115,7 @@ public:
 private:
   /**
    * \internal
-   * Install an ns3::OnOffApplication on the node configured with all the 
+   * Install an ns3::OnOffApplication on the node configured with all the
    * attributes set with SetAttribute.
    *
    * \param node The node on which an OnOffApplication will be installed.

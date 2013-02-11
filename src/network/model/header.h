@@ -34,9 +34,9 @@ namespace ns3 {
  *
  * Every Protocol header which needs to be inserted or removed
  * from a Packet instance must derive from this base class and
- * implement the pure virtual methods defined here. 
+ * implement the pure virtual methods defined here.
  *
- * Sample code which shows how to create a new type of Header, and how to use it, 
+ * Sample code which shows how to create a new type of Header, and how to use it,
  * is shown in the sample file samples/main-packet-header.cc
  */
 class Header : public Chunk
@@ -70,7 +70,7 @@ public:
    * \returns the number of bytes read.
    *
    * This method is used by Packet::RemoveHeader to
-   * re-create a header from the byte buffer of a packet. 
+   * re-create a header from the byte buffer of a packet.
    * The data read is expected to
    * match bit-for-bit the representation of this header in real
    * networks.
@@ -78,13 +78,13 @@ public:
   virtual uint32_t Deserialize (Buffer::Iterator start) = 0;
   /**
    * \param os output stream
-   * This method is used by Packet::Print to print the 
+   * This method is used by Packet::Print to print the
    * content of a trailer as ascii data to a c++ output stream.
    * Although the trailer is free to format its output as it
    * wishes, it is recommended to follow a few rules to integrate
-   * with the packet pretty printer: start with flags, small field 
-   * values located between a pair of parens. Values should be separated 
-   * by whitespace. Follow the parens with the important fields, 
+   * with the packet pretty printer: start with flags, small field
+   * values located between a pair of parens. Values should be separated
+   * by whitespace. Follow the parens with the important fields,
    * separated by whitespace.
    * i.e.: (field1 val1 field2 val2 field3 val3) field4 val4 field5 val5
    */

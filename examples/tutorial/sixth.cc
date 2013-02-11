@@ -43,10 +43,10 @@ NS_LOG_COMPONENT_DEFINE ("SixthScriptExample");
 // We want to look at changes in the ns-3 TCP congestion window.  We need
 // to crank up a flow and hook the CongestionWindow attribute on the socket
 // of the sender.  Normally one would use an on-off application to generate a
-// flow, but this has a couple of problems.  First, the socket of the on-off 
-// application is not created until Application Start time, so we wouldn't be 
-// able to hook the socket (now) at configuration time.  Second, even if we 
-// could arrange a call after start time, the socket is not public so we 
+// flow, but this has a couple of problems.  First, the socket of the on-off
+// application is not created until Application Start time, so we wouldn't be
+// able to hook the socket (now) at configuration time.  Second, even if we
+// could arrange a call after start time, the socket is not public so we
 // couldn't get at it.
 //
 // So, we can cook up a simple version of the on-off application that does what
@@ -54,12 +54,12 @@ NS_LOG_COMPONENT_DEFINE ("SixthScriptExample");
 // application.  On the minus side, we don't have a helper, so we have to get
 // a little more involved in the details, but this is trivial.
 //
-// So first, we create a socket and do the trace connect on it; then we pass 
-// this socket into the constructor of our simple application which we then 
+// So first, we create a socket and do the trace connect on it; then we pass
+// this socket into the constructor of our simple application which we then
 // install in the source node.
 // ===========================================================================
 //
-class MyApp : public Application 
+class MyApp : public Application
 {
 public:
 
@@ -86,13 +86,13 @@ private:
 };
 
 MyApp::MyApp ()
-  : m_socket (0), 
-    m_peer (), 
-    m_packetSize (0), 
-    m_nPackets (0), 
-    m_dataRate (0), 
-    m_sendEvent (), 
-    m_running (false), 
+  : m_socket (0),
+    m_peer (),
+    m_packetSize (0),
+    m_nPackets (0),
+    m_dataRate (0),
+    m_sendEvent (),
+    m_running (false),
     m_packetsSent (0)
 {
 }
@@ -122,7 +122,7 @@ MyApp::StartApplication (void)
   SendPacket ();
 }
 
-void 
+void
 MyApp::StopApplication (void)
 {
   m_running = false;
@@ -138,7 +138,7 @@ MyApp::StopApplication (void)
     }
 }
 
-void 
+void
 MyApp::SendPacket (void)
 {
   Ptr<Packet> packet = Create<Packet> (m_packetSize);
@@ -150,7 +150,7 @@ MyApp::SendPacket (void)
     }
 }
 
-void 
+void
 MyApp::ScheduleTx (void)
 {
   if (m_running)
@@ -174,7 +174,7 @@ RxDrop (Ptr<PcapFileWrapper> file, Ptr<const Packet> p)
   file->Write (Simulator::Now (), p);
 }
 
-int 
+int
 main (int argc, char *argv[])
 {
   NodeContainer nodes;

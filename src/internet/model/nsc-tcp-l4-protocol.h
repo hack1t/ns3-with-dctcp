@@ -40,7 +40,7 @@ class NscInterfaceImpl;
 
 /**
  * \ingroup nsctcp
- * 
+ *
  * \brief Nsc wrapper glue, to interface with the Ipv4 protocol underneath.
  */
 class NscTcpL4Protocol : public IpL4Protocol {

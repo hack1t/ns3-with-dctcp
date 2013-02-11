@@ -43,7 +43,7 @@ namespace ns3 {
 
 #define MAX_PKTS_PER_TRACE_FILE 100000
 struct Rgb;
-typedef struct 
+typedef struct
 {
   uint32_t fromNode;
   uint32_t toNode;
@@ -72,7 +72,7 @@ struct LinkPairCompare
       oss2 << second.fromNode << second.toNode;
       return oss1.str () < oss2.str ();
     }
-   
+
 };
 
 /**
@@ -97,14 +97,14 @@ public:
    * \brief Constructor
    * \param filename The Filename for the trace file used by the Animator
    * \param maxPktsPerFile The maximum number of packets per trace file.
-	    AnimationInterface will create trace files with the following 
+	    AnimationInterface will create trace files with the following
             filenames : filename, filename-1, filename-2..., filename-N
 	    where each file contains packet info for 'maxPktPerFile' number of packets
    * \param usingXML Set to true if XML output traces are required
    *
    */
-  AnimationInterface (const std::string filename, 
-	uint64_t maxPktsPerFile = MAX_PKTS_PER_TRACE_FILE, 
+  AnimationInterface (const std::string filename,
+	uint64_t maxPktsPerFile = MAX_PKTS_PER_TRACE_FILE,
 	bool usingXML = true);
 
   /**
@@ -116,7 +116,7 @@ public:
   /**
    * \brief Enable tracking of the Ipv4 routing table for all Nodes
    *
-   * \param fileName Trace file for storing routing table information 
+   * \param fileName Trace file for storing routing table information
    * \param startTime Start time for capture
    * \param stopTime  End time for capture
    * \param pollInterval The periodic interval at which routing table information is polled
@@ -149,7 +149,7 @@ public:
 
   /**
    * \brief Specify the time at which capture should start
-   * 
+   *
    * \param t The time at which AnimationInterface should begin capture of traffic info
    *
    * \returns none
@@ -158,7 +158,7 @@ public:
 
   /**
    * \brief Specify the time at which capture should stop
-   * 
+   *
    * \param t The time at which AnimationInterface should stop capture of traffic info
    *
    * \returns none
@@ -166,7 +166,7 @@ public:
   void SetStopTime (Time t);
 
   /**
-   * \brief Set mobility poll interval:WARNING: setting a low interval can 
+   * \brief Set mobility poll interval:WARNING: setting a low interval can
    * cause slowness
    *
    * \param t Time interval between fetching mobility/position information
@@ -187,7 +187,7 @@ public:
   /**
    * \brief typedef for WriteCallBack used for listening to AnimationInterface
    * write messages
-   * 
+   *
    */
   typedef void (*AnimWriteCallback) (const char * str);
 
@@ -314,7 +314,7 @@ public:
    * \param toNodeDescription Description at the "to Node" end such as Ip address
    *
    */
-  static void SetLinkDescription (uint32_t fromNode, uint32_t toNode, 
+  static void SetLinkDescription (uint32_t fromNode, uint32_t toNode,
                                   std::string linkDescription,
                                   std::string fromNodeDescription = "",
                                   std::string toNodeDescription = "");
@@ -402,7 +402,7 @@ private:
   bool m_randomPosition;
   AnimWriteCallback m_writeCallback;
   bool m_started;
-  bool m_enablePacketMetadata; 
+  bool m_enablePacketMetadata;
   Time m_startTime;
   Time m_stopTime;
   uint64_t m_maxPktsPerFile;
@@ -411,7 +411,7 @@ private:
   std::string m_routingFileName;
   Time m_routingPollInterval;
   NodeContainer m_routingNc;
-  
+
   void TrackIpv4Route ();
   std::string GetIpv4RoutingTable (Ptr <Node> n);
 
@@ -518,15 +518,15 @@ private:
   void OutputWirelessPacket (Ptr<const Packet> p, AnimPacketInfo& pktInfo, AnimRxInfo pktrxInfo);
   void OutputCsmaPacket (Ptr<const Packet> p, AnimPacketInfo& pktInfo, AnimRxInfo pktrxInfo);
   void MobilityAutoCheck ();
-  
+
 
   std::map<uint64_t, AnimPacketInfo> m_pendingWifiPackets;
   void AddPendingWifiPacket (uint64_t AnimUid, AnimPacketInfo&);
-  bool WifiPacketIsPending (uint64_t AnimUid); 
+  bool WifiPacketIsPending (uint64_t AnimUid);
 
   std::map<uint64_t, AnimPacketInfo> m_pendingWimaxPackets;
   void AddPendingWimaxPacket (uint64_t AnimUid, AnimPacketInfo&);
-  bool WimaxPacketIsPending (uint64_t AnimUid); 
+  bool WimaxPacketIsPending (uint64_t AnimUid);
 
   std::map<uint64_t, AnimPacketInfo> m_pendingLtePackets;
   void AddPendingLtePacket (uint64_t AnimUid, AnimPacketInfo&);
@@ -563,7 +563,7 @@ private:
   void ConnectLteUe (Ptr <Node> n, Ptr <LteUeNetDevice> nd, uint32_t devIndex);
   void ConnectLteEnb (Ptr <Node> n, Ptr <LteEnbNetDevice> nd, uint32_t devIndex);
 
-  
+
   std::map <std::string, uint32_t> m_macToNodeIdMap;
   bool IsInTimeWindow ();
 
@@ -613,7 +613,7 @@ private:
 
 
   /// Provides uniform random variables.
-  Ptr<UniformRandomVariable> m_uniformRandomVariable;  
+  Ptr<UniformRandomVariable> m_uniformRandomVariable;
 };
 
 /**
@@ -621,7 +621,7 @@ private:
  * \brief A structure to store red, blue and green components for entities such as nodes
  *
  */
-struct Rgb 
+struct Rgb
 {
   uint8_t r;
   uint8_t g;
@@ -635,8 +635,8 @@ struct Rgb
  *
  * When Anim receives a Tx Notification we tag the packet with a unique global uint64_t identifier
  * before recording Tx information
- * When Anim receives Rx notifications the tag is used to retrieve Tx information recorded earlier 
- * 
+ * When Anim receives Rx notifications the tag is used to retrieve Tx information recorded earlier
+ *
  */
 
 class AnimByteTag : public Tag
@@ -649,7 +649,7 @@ public:
    *
    */
   static TypeId GetTypeId (void);
-  
+
   /**
    * \brief Get Instance Type Id
    * \returns Type Id

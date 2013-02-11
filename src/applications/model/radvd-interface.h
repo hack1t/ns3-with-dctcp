@@ -98,13 +98,13 @@ public:
   void SetMaxRtrAdvInterval (uint32_t maxRtrAdvInterval);
 
   /**
-   * \brief Get minimum RA interval 
+   * \brief Get minimum RA interval
    * \return RA interval (ms)
    */
   uint32_t GetMinRtrAdvInterval () const;
 
   /**
-   * \brief Get minimum RA interval 
+   * \brief Get minimum RA interval
    * \param minRtrAdvInterval RA interval (ms).
    */
   void SetMinRtrAdvInterval (uint32_t minRtrAdvInterval);
@@ -155,7 +155,7 @@ public:
    * \brief Set link MTU.
    * \param linkMtu link MTU
    */
-  void SetLinkMtu (uint32_t linkMtu); 
+  void SetLinkMtu (uint32_t linkMtu);
 
   /**
    * \brief Get reachable time.
@@ -203,7 +203,7 @@ public:
    * \brief Set current hop limit.
    * \param curHopLimit current hop limit for the link
    */
-  void SetCurHopLimit (uint8_t curHopLimit); 
+  void SetCurHopLimit (uint8_t curHopLimit);
 
   /**
    * \brief Get default preference.

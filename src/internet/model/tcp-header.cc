@@ -118,8 +118,8 @@ uint16_t TcpHeader::GetUrgentPointer () const
   return m_urgentPointer;
 }
 
-void 
-TcpHeader::InitializeChecksum (Ipv4Address source, 
+void
+TcpHeader::InitializeChecksum (Ipv4Address source,
                                Ipv4Address destination,
                                uint8_t protocol)
 {
@@ -128,8 +128,8 @@ TcpHeader::InitializeChecksum (Ipv4Address source,
   m_protocol = protocol;
 }
 
-void 
-TcpHeader::InitializeChecksum (Ipv6Address source, 
+void
+TcpHeader::InitializeChecksum (Ipv6Address source,
                                Ipv6Address destination,
                                uint8_t protocol)
 {
@@ -138,8 +138,8 @@ TcpHeader::InitializeChecksum (Ipv6Address source,
   m_protocol = protocol;
 }
 
-void 
-TcpHeader::InitializeChecksum (Address source, 
+void
+TcpHeader::InitializeChecksum (Address source,
                                Address destination,
                                uint8_t protocol)
 {
@@ -197,7 +197,7 @@ TcpHeader::IsChecksumOk (void) const
   return m_goodChecksum;
 }
 
-TypeId 
+TypeId
 TcpHeader::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpHeader")
@@ -206,7 +206,7 @@ TcpHeader::GetTypeId (void)
   ;
   return tid;
 }
-TypeId 
+TypeId
 TcpHeader::GetInstanceTypeId (void) const
 {
   return GetTypeId ();

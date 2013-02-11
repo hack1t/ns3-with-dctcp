@@ -645,7 +645,7 @@ private:
   std::vector<Ipv4Address> m_addresses;   // / The bind ipv4 addresses with next hop, src, destination address in sequence
 
   /// Provides uniform random variables.
-  Ptr<UniformRandomVariable> m_uniformRandomVariable;  
+  Ptr<UniformRandomVariable> m_uniformRandomVariable;
 };
 }  /* namespace dsr */
 }  /* namespace ns3 */

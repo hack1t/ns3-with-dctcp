@@ -51,12 +51,12 @@ namespace ns3 {
  * Now, just because we can measure time in nanoseconds doesn't mean we can
  * put our process to sleep to nanosecond resolution.  We are eventually going
  * to use the function clock_nanosleep () to sleep until a simulation Time
- * specified by the caller. 
+ * specified by the caller.
  *
  * MORE ON JIFFIES, SLEEP, PROCESSES, etc., as required
  *
  * Nanosleep takes a struct timespec as an input so we have to deal with
- * conversion between Time and struct timespec here.  They are both 
+ * conversion between Time and struct timespec here.  They are both
  * interpreted as elapsed times.
  */
 class WallClockSynchronizer : public Synchronizer
@@ -99,12 +99,12 @@ protected:
   virtual uint64_t DoGetCurrentRealtime (void);
 
 /**
- * @brief Establish a correspondence between a simulation time and a 
+ * @brief Establish a correspondence between a simulation time and a
  * wall-clock (real) time.
  *
  * @internal
  *
- * There are three timelines involved here:  the simulation time, the 
+ * There are three timelines involved here:  the simulation time, the
  * (absolute) wall-clock time and the (relative) synchronizer real time.
  * Calling this method makes a correspondence between the origin of the
  * synchronizer time and the current wall-clock time.
@@ -115,10 +115,10 @@ protected:
  * value of the real time clock that will be used to actually perform the
  * synchronization.
  *
- * Subclasses are expected to implement this method to do the actual 
+ * Subclasses are expected to implement this method to do the actual
  * real-time-clock-specific work of making the correspondence mentioned above.
  * for example, this is where the differences between Time parameters and
- * parameters to clock_nanosleep would be dealt with. 
+ * parameters to clock_nanosleep would be dealt with.
  *
  * @param ns The simulation time we need to use as the origin (normalized to
  * nanosecond units).
@@ -131,7 +131,7 @@ protected:
  *
  * @internal
  *
- * @param ns Simulation timestep from the simulator normalized to nanosecond 
+ * @param ns Simulation timestep from the simulator normalized to nanosecond
  * steps.
  * @returns Drift in nanosecond units.
  * @see TimeStepPrecision::Get
@@ -179,7 +179,7 @@ protected:
   uint64_t TimevalToNs (struct timeval *tv);
 
   void TimevalAdd (
-    struct timeval *tv1, 
+    struct timeval *tv1,
     struct timeval *tv2,
     struct timeval *result);
 

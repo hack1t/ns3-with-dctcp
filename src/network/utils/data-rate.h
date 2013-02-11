@@ -61,12 +61,12 @@ namespace ns3 {
  * kbps, kb/s, Kbps, Kb/s, kBps, kB/s, KBps, KB/s, Kib/s, KiB/s \n
  * Mbps, Mb/s, MBps, MB/s, Mib/s, MiB/s \n
  * Gbps, Gb/s, GBps, GB/s, Gib/s, GiB/s \n
- * 
+ *
  * Examples:
  * "56kbps" = 56,000 bits/s \n
  * "128 kb/s" = 128,000 bits/s \n
  * "8Kib/s" = 1 KiB/s = 8192 bits/s \n
- * "1kB/s" = 8000 bits/s 
+ * "1kB/s" = 8000 bits/s
  */
 class DataRate
 {
@@ -76,7 +76,7 @@ public:
    * \brief Integer constructor
    *
    * Construct a data rate from an integer.  This class only supports positive
-   * integer data rates in units of bits/s, meaning 1bit/s is the smallest 
+   * integer data rates in units of bits/s, meaning 1bit/s is the smallest
    * non-trivial bitrate available.
    * \param bps bit/s value
    */

@@ -39,7 +39,7 @@ class Ipv4Route;
 class Ipv6Route;
 
 /**
- * \brief L4 Protocol abstract base class 
+ * \brief L4 Protocol abstract base class
  *
  * This is an abstract base class for layer four protocols which use IP as
  * the network layer.
@@ -67,9 +67,9 @@ public:
    * \param p packet to forward up
    * \param header IPv4 Header information
    * \param incomingInterface the Ipv4Interface on which the packet arrived
-   * 
+   *
    * Called from lower-level layers to send the packet up
-   * in the stack. 
+   * in the stack.
    */
   virtual enum RxStatus Receive (Ptr<Packet> p,
                                  Ipv4Header const &header,

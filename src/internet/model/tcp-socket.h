@@ -63,7 +63,7 @@ class TcpSocket : public Socket
 {
 public:
   static TypeId GetTypeId (void);
- 
+
   TcpSocket (void);
   virtual ~TcpSocket (void);
 

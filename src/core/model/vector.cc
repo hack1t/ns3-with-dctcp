@@ -77,7 +77,7 @@ CalculateDistance (const Vector3D &a, const Vector3D &b)
   double distance = std::sqrt (dx * dx + dy * dy + dz * dz);
   return distance;
 }
-double 
+double
 CalculateDistance (const Vector2D &a, const Vector2D &b)
 {
   NS_LOG_FUNCTION (a << b);

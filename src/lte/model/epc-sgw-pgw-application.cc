@@ -56,11 +56,11 @@ EpcSgwPgwApplication::UeInfo::Classify (Ptr<Packet> p)
   NS_LOG_FUNCTION (this << p);
   // we hardcode DOWNLINK direction since the PGW is espected to
   // classify only downlink packets (uplink packets will go to the
-  // internet without any classification). 
+  // internet without any classification).
   return m_tftClassifier.Classify (p, EpcTft::DOWNLINK);
 }
 
-Ipv4Address 
+Ipv4Address
 EpcSgwPgwApplication::UeInfo::GetEnbAddr ()
 {
   return m_enbAddr;
@@ -92,7 +92,7 @@ EpcSgwPgwApplication::DoDispose ()
   m_s1uSocket = 0;
 }
 
-  
+
 
 EpcSgwPgwApplication::EpcSgwPgwApplication (const Ptr<VirtualNetDevice> tunDevice, const Ptr<Socket> s1uSocket)
   : m_s1uSocket (s1uSocket),
@@ -104,23 +104,23 @@ EpcSgwPgwApplication::EpcSgwPgwApplication (const Ptr<VirtualNetDevice> tunDevic
   m_s1uSocket->SetRecvCallback (MakeCallback (&EpcSgwPgwApplication::RecvFromS1uSocket, this));
 }
 
-  
+
 EpcSgwPgwApplication::~EpcSgwPgwApplication ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
 
 
-uint32_t 
+uint32_t
 EpcSgwPgwApplication::ActivateS1Bearer (Ipv4Address ueAddr, Ipv4Address enbAddr, Ptr<EpcTft> tft)
 {
   NS_LOG_FUNCTION (this << ueAddr << enbAddr << tft);
 
   // simple sanity check. If you ever need more than 4M teids
   // throughout your simulation, you'll need to implement a smarter teid
-  // management algorithm. 
+  // management algorithm.
   NS_ABORT_IF (m_teidCount == 0xFFFFFFFF);
-  uint32_t teid = ++m_teidCount;  
+  uint32_t teid = ++m_teidCount;
 
   std::map<Ipv4Address, UeInfo>::iterator it = m_ueInfoMap.find (ueAddr);
   if (it == m_ueInfoMap.end ())
@@ -131,7 +131,7 @@ EpcSgwPgwApplication::ActivateS1Bearer (Ipv4Address ueAddr, Ipv4Address enbAddr,
       it = ret.first;
       it->second.SetEnbAddr (enbAddr);
     }
-        
+
   it->second.AddBearer (tft, teid);
   return teid;
 }
@@ -151,16 +151,16 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
   // find corresponding UeInfo address
   std::map<Ipv4Address, UeInfo>::iterator it = m_ueInfoMap.find (ueAddr);
   if (it == m_ueInfoMap.end ())
-    {        
+    {
       NS_LOG_WARN ("unknown UE address " << ueAddr) ;
     }
   else
     {
-      Ipv4Address enbAddr = it->second.GetEnbAddr ();      
-      uint32_t teid = it->second.Classify (packet);   
+      Ipv4Address enbAddr = it->second.GetEnbAddr ();
+      uint32_t teid = it->second.Classify (packet);
       if (teid == 0)
         {
-          NS_LOG_WARN ("no matching bearer for this packet");                   
+          NS_LOG_WARN ("no matching bearer for this packet");
         }
       else
         {
@@ -174,10 +174,10 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
   return succeeded;
 }
 
-void 
+void
 EpcSgwPgwApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 {
-  NS_LOG_FUNCTION (this << socket);  
+  NS_LOG_FUNCTION (this << socket);
   NS_ASSERT (socket == m_s1uSocket);
   Ptr<Packet> packet = socket->Recv ();
   GtpuHeader gtpu;
@@ -191,7 +191,7 @@ EpcSgwPgwApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   SendToTunDevice (packet, teid);
 }
 
-void 
+void
 EpcSgwPgwApplication::SendToTunDevice (Ptr<Packet> packet, uint32_t teid)
 {
   NS_LOG_FUNCTION (this << packet << teid);
@@ -199,7 +199,7 @@ EpcSgwPgwApplication::SendToTunDevice (Ptr<Packet> packet, uint32_t teid)
   m_tunDevice->Receive (packet, 0x0800, m_tunDevice->GetAddress (), m_tunDevice->GetAddress (), NetDevice::PACKET_HOST);
 }
 
-void 
+void
 EpcSgwPgwApplication::SendToS1uSocket (Ptr<Packet> packet, Ipv4Address enbAddr, uint32_t teid)
 {
   NS_LOG_FUNCTION (this << packet << enbAddr << teid);
@@ -208,7 +208,7 @@ EpcSgwPgwApplication::SendToS1uSocket (Ptr<Packet> packet, Ipv4Address enbAddr, 
   gtpu.SetTeid (teid);
   // From 3GPP TS 29.281 v10.0.0 Section 5.1
   // Length of the payload + the non obligatory GTP-U header
-  gtpu.SetLength (packet->GetSize () + gtpu.GetSerializedSize () - 8);  
+  gtpu.SetLength (packet->GetSize () + gtpu.GetSerializedSize () - 8);
   packet->AddHeader (gtpu);
   uint32_t flags = 0;
   m_s1uSocket->SendTo (packet, flags, InetSocketAddress(enbAddr, m_gtpuUdpPort));

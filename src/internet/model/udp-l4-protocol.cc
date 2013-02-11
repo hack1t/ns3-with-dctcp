@@ -49,7 +49,7 @@ NS_OBJECT_ENSURE_REGISTERED (UdpL4Protocol);
 /* see http://www.iana.org/assignments/protocol-numbers */
 const uint8_t UdpL4Protocol::PROT_NUMBER = 17;
 
-TypeId 
+TypeId
 UdpL4Protocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UdpL4Protocol")
@@ -74,7 +74,7 @@ UdpL4Protocol::~UdpL4Protocol ()
   NS_LOG_FUNCTION_NOARGS ();
 }
 
-void 
+void
 UdpL4Protocol::SetNode (Ptr<Node> node)
 {
   m_node = node;
@@ -103,12 +103,12 @@ UdpL4Protocol::NotifyNewAggregate ()
           node->AggregateObject (udpFactory);
         }
     }
-  
+
   // We set at least one of our 2 down targets to the IPv4/IPv6 send
   // functions.  Since these functions have different prototypes, we
   // need to keep track of whether we are connected to an IPv4 or
   // IPv6 lower layer and call the appropriate one.
-  
+
   if (ipv4 != 0 && m_downTarget.IsNull())
     {
       ipv4->Insert (this);
@@ -122,7 +122,7 @@ UdpL4Protocol::NotifyNewAggregate ()
   Object::NotifyNewAggregate ();
 }
 
-int 
+int
 UdpL4Protocol::GetProtocolNumber (void) const
 {
   return PROT_NUMBER;
@@ -205,7 +205,7 @@ UdpL4Protocol::Allocate (Ipv4Address localAddress, uint16_t localPort,
                                 peerAddress, peerPort);
 }
 
-void 
+void
 UdpL4Protocol::DeAllocate (Ipv4EndPoint *endPoint)
 {
   NS_LOG_FUNCTION (this << endPoint);
@@ -248,20 +248,20 @@ UdpL4Protocol::Allocate6 (Ipv6Address localAddress, uint16_t localPort,
                                 peerAddress, peerPort);
 }
 
-void 
+void
 UdpL4Protocol::DeAllocate (Ipv6EndPoint *endPoint)
 {
   NS_LOG_FUNCTION (this << endPoint);
   m_endPoints6->DeAllocate (endPoint);
 }
 
-void 
+void
 UdpL4Protocol::ReceiveIcmp (Ipv4Address icmpSource, uint8_t icmpTtl,
                             uint8_t icmpType, uint8_t icmpCode, uint32_t icmpInfo,
                             Ipv4Address payloadSource,Ipv4Address payloadDestination,
                             const uint8_t payload[8])
 {
-  NS_LOG_FUNCTION (this << icmpSource << icmpTtl << icmpType << icmpCode << icmpInfo 
+  NS_LOG_FUNCTION (this << icmpSource << icmpTtl << icmpType << icmpCode << icmpInfo
                         << payloadSource << payloadDestination);
   uint16_t src, dst;
   src = payload[0] << 8;
@@ -282,13 +282,13 @@ UdpL4Protocol::ReceiveIcmp (Ipv4Address icmpSource, uint8_t icmpTtl,
     }
 }
 
-void 
+void
 UdpL4Protocol::ReceiveIcmp (Ipv6Address icmpSource, uint8_t icmpTtl,
                             uint8_t icmpType, uint8_t icmpCode, uint32_t icmpInfo,
                             Ipv6Address payloadSource,Ipv6Address payloadDestination,
                             const uint8_t payload[8])
 {
-  NS_LOG_FUNCTION (this << icmpSource << icmpTtl << icmpType << icmpCode << icmpInfo 
+  NS_LOG_FUNCTION (this << icmpSource << icmpTtl << icmpType << icmpCode << icmpInfo
                         << payloadSource << payloadDestination);
   uint16_t src, dst;
   src = payload[0] << 8;
@@ -325,7 +325,7 @@ UdpL4Protocol::Receive (Ptr<Packet> packet,
 
   // We only peek at the header for now (instead of removing it) so that it will be intact
   // if we have to pass it to a IPv6 endpoint via:
-  // 
+  //
   //   UdpL4Protocol::Receive (Ptr<Packet> packet, Ipv6Address &src, Ipv6Address &dst, ...)
 
   packet->PeekHeader (udpHeader);
@@ -336,7 +336,7 @@ UdpL4Protocol::Receive (Ptr<Packet> packet,
       return IpL4Protocol::RX_CSUM_FAILED;
     }
 
-  NS_LOG_DEBUG ("Looking up dst " << header.GetDestination () << " port " << udpHeader.GetDestinationPort ()); 
+  NS_LOG_DEBUG ("Looking up dst " << header.GetDestination () << " port " << udpHeader.GetDestinationPort ());
   Ipv4EndPointDemux::EndPoints endPoints =
     m_endPoints->Lookup (header.GetDestination (), udpHeader.GetDestinationPort (),
                          header.GetSource (), udpHeader.GetSourcePort (), interface);
@@ -362,7 +362,7 @@ UdpL4Protocol::Receive (Ptr<Packet> packet,
   for (Ipv4EndPointDemux::EndPointsI endPoint = endPoints.begin ();
        endPoint != endPoints.end (); endPoint++)
     {
-      (*endPoint)->ForwardUp (packet->Copy (), header, udpHeader.GetSourcePort (), 
+      (*endPoint)->ForwardUp (packet->Copy (), header, udpHeader.GetSourcePort (),
                               interface);
     }
   return IpL4Protocol::RX_OK;
@@ -390,7 +390,7 @@ UdpL4Protocol::Receive (Ptr<Packet> packet,
       return IpL4Protocol::RX_CSUM_FAILED;
     }
 
-  NS_LOG_DEBUG ("Looking up dst " << header.GetDestinationAddress () << " port " << udpHeader.GetDestinationPort ()); 
+  NS_LOG_DEBUG ("Looking up dst " << header.GetDestinationAddress () << " port " << udpHeader.GetDestinationPort ());
   Ipv6EndPointDemux::EndPoints endPoints =
     m_endPoints6->Lookup (header.GetDestinationAddress (), udpHeader.GetDestinationPort (),
                          header.GetSourceAddress (), udpHeader.GetSourcePort (), interface);
@@ -408,8 +408,8 @@ UdpL4Protocol::Receive (Ptr<Packet> packet,
 }
 
 void
-UdpL4Protocol::Send (Ptr<Packet> packet, 
-                     Ipv4Address saddr, Ipv4Address daddr, 
+UdpL4Protocol::Send (Ptr<Packet> packet,
+                     Ipv4Address saddr, Ipv4Address daddr,
                      uint16_t sport, uint16_t dport)
 {
   NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport);
@@ -431,8 +431,8 @@ UdpL4Protocol::Send (Ptr<Packet> packet,
 }
 
 void
-UdpL4Protocol::Send (Ptr<Packet> packet, 
-                     Ipv4Address saddr, Ipv4Address daddr, 
+UdpL4Protocol::Send (Ptr<Packet> packet,
+                     Ipv4Address saddr, Ipv4Address daddr,
                      uint16_t sport, uint16_t dport, Ptr<Ipv4Route> route)
 {
   NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport << route);

@@ -196,7 +196,7 @@ TcpTahoe::GetInitialCwnd (void) const
   return m_initialCWnd;
 }
 
-void 
+void
 TcpTahoe::InitializeCwnd (void)
 {
   /*

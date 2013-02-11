@@ -35,7 +35,7 @@
 
 #include "ping6.h"
 
-namespace ns3 
+namespace ns3
 {
 
 NS_LOG_COMPONENT_DEFINE ("Ping6Application");
@@ -47,27 +47,27 @@ TypeId Ping6::GetTypeId ()
   static TypeId tid = TypeId ("ns3::Ping6")
     .SetParent<Application>()
     .AddConstructor<Ping6>()
-    .AddAttribute ("MaxPackets", 
+    .AddAttribute ("MaxPackets",
                    "The maximum number of packets the application will send",
                    UintegerValue (100),
                    MakeUintegerAccessor (&Ping6::m_count),
                    MakeUintegerChecker<uint32_t>())
-    .AddAttribute ("Interval", 
+    .AddAttribute ("Interval",
                    "The time to wait between packets",
                    TimeValue (Seconds (1.0)),
                    MakeTimeAccessor (&Ping6::m_interval),
                    MakeTimeChecker ())
-    .AddAttribute ("RemoteIpv6", 
+    .AddAttribute ("RemoteIpv6",
                    "The Ipv6Address of the outbound packets",
                    Ipv6AddressValue (),
                    MakeIpv6AddressAccessor (&Ping6::m_peerAddress),
                    MakeIpv6AddressChecker ())
-    .AddAttribute ("LocalIpv6", 
+    .AddAttribute ("LocalIpv6",
                    "Local Ipv6Address of the sender",
                    Ipv6AddressValue (),
                    MakeIpv6AddressAccessor (&Ping6::m_localAddress),
                    MakeIpv6AddressChecker ())
-    .AddAttribute ("PacketSize", 
+    .AddAttribute ("PacketSize",
                    "Size of packets generated",
                    UintegerValue (100),
                    MakeUintegerAccessor (&Ping6::m_size),
@@ -117,7 +117,7 @@ void Ping6::StartApplication ()
   ScheduleTransmit (Seconds (0.));
 }
 
-void Ping6::SetLocal (Ipv6Address ipv6) 
+void Ping6::SetLocal (Ipv6Address ipv6)
 {
   NS_LOG_FUNCTION (this << ipv6);
   m_localAddress = ipv6;
@@ -169,7 +169,7 @@ void Ping6::Send ()
   if (m_ifIndex > 0)
     {
       /* hack to have ifIndex in Ipv6RawSocketImpl
-       * maybe add a SetIfIndex in Ipv6RawSocketImpl directly 
+       * maybe add a SetIfIndex in Ipv6RawSocketImpl directly
        */
       src = GetNode ()->GetObject<Ipv6> ()->GetAddress (m_ifIndex, 0).GetAddress ();
     }
@@ -192,7 +192,7 @@ void Ping6::Send ()
   req.SetSeq (m_seq);
   m_seq++;
 
-  /* we do not calculate pseudo header checksum here, because we are not sure about 
+  /* we do not calculate pseudo header checksum here, because we are not sure about
    * source IPv6 address. Checksum is calculated in Ipv6RawSocketImpl.
    */
 

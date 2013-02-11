@@ -39,7 +39,7 @@ public:
    *
    * \param protocol the name of the protocol to use to receive traffic
    *        This string identifies the socket factory type used to create
-   *        sockets for the applications.  A typical value would be 
+   *        sockets for the applications.  A typical value would be
    *        ns3::TcpSocketFactory.
    * \param address the address of the sink,
    *
@@ -58,7 +58,7 @@ public:
    * Install an ns3::PacketSinkApplication on each node of the input container
    * configured with all the attributes set with SetAttribute.
    *
-   * \param c NodeContainer of the set of nodes on which a PacketSinkApplication 
+   * \param c NodeContainer of the set of nodes on which a PacketSinkApplication
    * will be installed.
    */
   ApplicationContainer Install (NodeContainer c) const;

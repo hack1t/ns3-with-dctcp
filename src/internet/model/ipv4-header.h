@@ -28,7 +28,7 @@ namespace ns3 {
 /**
  * \brief Packet header for IPv4
  */
-class Ipv4Header : public Header 
+class Ipv4Header : public Header
 {
 public:
   /**
@@ -55,7 +55,7 @@ public:
   void SetTos (uint8_t tos);
   /**
    * \enum DscpType
-   * \brief DiffServ Code Points 
+   * \brief DiffServ Code Points
    * Code Points defined in
    * Assured Forwarding (AF) RFC 2597
    * Expedited Forwarding (EF) RFC 2598
@@ -87,10 +87,10 @@ public:
 
       CS5 = 0xA0,
       EF = 0xB8,
-      
+
       CS6 = 0xC0,
       CS7 = 0xE0
-      
+
     };
   /**
    * \brief Set DSCP Field
@@ -108,7 +108,7 @@ public:
       ECT1 = 0x01,
       ECT0 = 0x02,
       CE = 0x03
-    }; 
+    };
   /**
    * \brief Set ECN Field
    * \param ecn ECN Type

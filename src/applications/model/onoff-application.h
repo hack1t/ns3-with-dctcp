@@ -39,10 +39,10 @@ class RandomVariableStream;
 class Socket;
 
 /**
- * \ingroup applications 
+ * \ingroup applications
  * \defgroup onoff OnOffApplication
  *
- * This traffic generator follows an On/Off pattern: after 
+ * This traffic generator follows an On/Off pattern: after
  * Application::StartApplication
  * is called, "On" and "Off" states alternate. The duration of each of
  * these states is determined with the onTime and the offTime random
@@ -83,7 +83,7 @@ class Socket;
 * If the underlying socket type supports broadcast, this application
 * will automatically enable the SetAllowBroadcast(true) socket option.
 */
-class OnOffApplication : public Application 
+class OnOffApplication : public Application
 {
 public:
   static TypeId GetTypeId (void);
@@ -95,8 +95,8 @@ public:
   /**
    * \param maxBytes the total number of bytes to send
    *
-   * Set the total number of bytes to send. Once these bytes are sent, no packet 
-   * is sent again, even in on state. The value zero means that there is no 
+   * Set the total number of bytes to send. Once these bytes are sent, no packet
+   * is sent again, even in on state. The value zero means that there is no
    * limit.
    */
   void SetMaxBytes (uint32_t maxBytes);

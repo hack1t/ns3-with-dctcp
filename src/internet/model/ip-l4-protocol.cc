@@ -28,7 +28,7 @@ namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (IpL4Protocol);
 
-TypeId 
+TypeId
 IpL4Protocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::IpL4Protocol")

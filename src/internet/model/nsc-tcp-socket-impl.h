@@ -45,7 +45,7 @@ class TcpHeader;
  * \ingroup nsctcp
  *
  * \brief Socket logic for the NSC TCP sockets.
- * 
+ *
  * Most of the TCP internal
  * logic is handled by the NSC tcp library itself; this class maps ns3::Socket
  * calls to the NSC TCP library.
@@ -82,7 +82,7 @@ public:
   virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flags);
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
                                 Address &fromAddress);
-  virtual int GetSockName (Address &address) const; 
+  virtual int GetSockName (Address &address) const;
   virtual bool SetAllowBroadcast (bool allowBroadcast);
   virtual bool GetAllowBroadcast () const;
 
@@ -91,7 +91,7 @@ private:
   friend class Tcp;
   // invoked by Tcp class
   int FinishBind (void);
-  void ForwardUp (Ptr<Packet> p, Ipv4Header header, uint16_t port, 
+  void ForwardUp (Ptr<Packet> p, Ipv4Header header, uint16_t port,
                   Ptr<Ipv4Interface> incomingInterface);
   void Destroy (void);
   //methods for state
@@ -170,9 +170,9 @@ private:
   Time m_lastMeasuredRtt;
 
   // Timer-related members
-  Time              m_cnTimeout; 
+  Time              m_cnTimeout;
   uint32_t          m_cnCount;
-  Time              m_persistTimeout; 
+  Time              m_persistTimeout;
 
   // Temporary queue for delivering data to application
   std::queue<Ptr<Packet> > m_deliveryQueue;

@@ -243,7 +243,7 @@ TcpNewReno::GetInitialCwnd (void) const
   return m_initialCWnd;
 }
 
-void 
+void
 TcpNewReno::InitializeCwnd (void)
 {
   /*

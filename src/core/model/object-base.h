@@ -80,7 +80,7 @@ public:
   /**
    * \param name the name of the attribute to set
    * \param value the name of the attribute to set
-   * \return true if the requested attribute exists and could be set, 
+   * \return true if the requested attribute exists and could be set,
    * false otherwise.
    */
   bool SetAttributeFailSafe (std::string name, const AttributeValue &value);
@@ -132,17 +132,17 @@ public:
 
 protected:
   /**
-   * This method is invoked once all member attributes have been 
+   * This method is invoked once all member attributes have been
    * initialized. Subclasses can override this method to be notified
    * of this event but if they do this, they must chain up to their
    * parent's NotifyConstructionCompleted method.
    */
   virtual void NotifyConstructionCompleted (void);
   /**
-   * \param attributes the attribute values used to initialize 
+   * \param attributes the attribute values used to initialize
    *        the member variables of this object's instance.
    *
-   * Invoked from subclasses to initialize all of their 
+   * Invoked from subclasses to initialize all of their
    * attribute members. This method will typically be invoked
    * automatically from ns3::CreateObject if your class derives
    * from ns3::Object. If you derive from ns3::ObjectBase directly,
@@ -153,7 +153,7 @@ protected:
 
 private:
   bool DoSet (Ptr<const AttributeAccessor> spec,
-              Ptr<const AttributeChecker> checker, 
+              Ptr<const AttributeChecker> checker,
               const AttributeValue &value);
 
 };

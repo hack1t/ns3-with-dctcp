@@ -56,7 +56,7 @@ namespace ns3 {
  * bit of typing.
  */
 template <typename T>
-class Ptr 
+class Ptr
 {
 private:
   T *m_ptr;
@@ -296,42 +296,42 @@ std::ostream &operator << (std::ostream &os, const Ptr<T> &p)
 }
 
 template <typename T1, typename T2>
-bool 
+bool
 operator == (Ptr<T1> const &lhs, T2 const *rhs)
 {
   return PeekPointer (lhs) == rhs;
 }
 
 template <typename T1, typename T2>
-bool 
+bool
 operator == (T1 const *lhs, Ptr<T2> &rhs)
 {
   return lhs == PeekPointer (rhs);
 }
 
 template <typename T1, typename T2>
-bool 
+bool
 operator != (Ptr<T1> const &lhs, T2 const *rhs)
 {
   return PeekPointer (lhs) != rhs;
 }
 
 template <typename T1, typename T2>
-bool 
+bool
 operator != (T1 const *lhs, Ptr<T2> &rhs)
 {
   return lhs != PeekPointer (rhs);
 }
 
 template <typename T1, typename T2>
-bool 
+bool
 operator == (Ptr<T1> const &lhs, Ptr<T2> const &rhs)
 {
   return PeekPointer (lhs) == PeekPointer (rhs);
 }
 
 template <typename T1, typename T2>
-bool 
+bool
 operator != (Ptr<T1> const &lhs, Ptr<T2> const &rhs)
 {
   return PeekPointer (lhs) != PeekPointer (rhs);
@@ -402,7 +402,7 @@ Ptr<T> Copy (Ptr<const T> object)
  ***************************************************/
 
 template <typename T>
-void 
+void
 Ptr<T>::Acquire (void) const
 {
   if (m_ptr != 0)
@@ -435,7 +435,7 @@ Ptr<T>::Ptr (T *ptr, bool ref)
 }
 
 template <typename T>
-Ptr<T>::Ptr (Ptr const&o) 
+Ptr<T>::Ptr (Ptr const&o)
   : m_ptr (PeekPointer (o))
 {
   Acquire ();
@@ -449,9 +449,9 @@ Ptr<T>::Ptr (Ptr<U> const &o)
 }
 
 template <typename T>
-Ptr<T>::~Ptr () 
+Ptr<T>::~Ptr ()
 {
-  if (m_ptr != 0) 
+  if (m_ptr != 0)
     {
       m_ptr->Unref ();
     }
@@ -459,13 +459,13 @@ Ptr<T>::~Ptr ()
 
 template <typename T>
 Ptr<T> &
-Ptr<T>::operator = (Ptr const& o) 
+Ptr<T>::operator = (Ptr const& o)
 {
   if (&o == this)
     {
       return *this;
     }
-  if (m_ptr != 0) 
+  if (m_ptr != 0)
     {
       m_ptr->Unref ();
     }
@@ -476,7 +476,7 @@ Ptr<T>::operator = (Ptr const& o)
 
 template <typename T>
 T *
-Ptr<T>::operator -> () 
+Ptr<T>::operator -> ()
 {
   return m_ptr;
 }
@@ -503,8 +503,8 @@ Ptr<T>::operator * ()
 }
 
 template <typename T>
-bool 
-Ptr<T>::operator! () 
+bool
+Ptr<T>::operator! ()
 {
   return m_ptr == 0;
 }
@@ -512,7 +512,7 @@ Ptr<T>::operator! ()
 template <typename T>
 Ptr<T>::operator Tester * () const
 {
-  if (m_ptr == 0) 
+  if (m_ptr == 0)
     {
       return 0;
     }

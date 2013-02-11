@@ -40,22 +40,22 @@ namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (RttEstimator);
 
-TypeId 
+TypeId
 RttEstimator::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::RttEstimator")
     .SetParent<Object> ()
-    .AddAttribute ("MaxMultiplier", 
+    .AddAttribute ("MaxMultiplier",
                    "Maximum RTO Multiplier",
                    UintegerValue (64),
                    MakeUintegerAccessor (&RttEstimator::m_maxMultiplier),
                    MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("InitialEstimation", 
+    .AddAttribute ("InitialEstimation",
                    "Initial RTT estimation",
                    TimeValue (Seconds (1.0)),
                    MakeTimeAccessor (&RttEstimator::m_initialEstimatedRtt),
                    MakeTimeChecker ())
-    .AddAttribute ("MinRTO", 
+    .AddAttribute ("MinRTO",
                    "Minimum retransmit timeout value",
                    TimeValue (Seconds (0.2)), // RFC2988 says min RTO=1 sec, but Linux uses 200ms. See http://www.postel.org/pipermail/end2end-interest/2004-November/004402.html
                    MakeTimeAccessor (&RttEstimator::SetMinRto,
@@ -65,24 +65,24 @@ RttEstimator::GetTypeId (void)
   return tid;
 }
 
-void 
+void
 RttEstimator::SetMinRto (Time minRto)
 {
   NS_LOG_FUNCTION (this << minRto);
   m_minRto = minRto;
 }
-Time 
+Time
 RttEstimator::GetMinRto (void) const
 {
   return m_minRto;
 }
-void 
+void
 RttEstimator::SetCurrentEstimate (Time estimate)
 {
   NS_LOG_FUNCTION (this << estimate);
   m_currentEstimatedRtt = estimate;
 }
-Time 
+Time
 RttEstimator::GetCurrentEstimate (void) const
 {
   return m_currentEstimatedRtt;
@@ -108,11 +108,11 @@ RttEstimator::RttEstimator ()
   : m_next (1), m_history (),
     m_nSamples (0),
     m_multiplier (1)
-{ 
+{
   NS_LOG_FUNCTION (this);
   //note next=1 everywhere since first segment will have sequence 1
-  
-  // We need attributes initialized here, not later, so use the 
+
+  // We need attributes initialized here, not later, so use the
   // ConstructSelf() technique documented in the manual
   ObjectBase::ConstructSelf (AttributeConstructionList ());
   m_currentEstimatedRtt = m_initialEstimatedRtt;
@@ -120,8 +120,8 @@ RttEstimator::RttEstimator ()
 }
 
 RttEstimator::RttEstimator (const RttEstimator& c)
-  : Object (c), m_next (c.m_next), m_history (c.m_history), 
-    m_maxMultiplier (c.m_maxMultiplier), 
+  : Object (c), m_next (c.m_next), m_history (c.m_history),
+    m_maxMultiplier (c.m_maxMultiplier),
     m_initialEstimatedRtt (c.m_initialEstimatedRtt),
     m_currentEstimatedRtt (c.m_currentEstimatedRtt), m_minRto (c.m_minRto),
     m_nSamples (c.m_nSamples), m_multiplier (c.m_multiplier)
@@ -135,7 +135,7 @@ RttEstimator::~RttEstimator ()
 }
 
 void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
-{ 
+{
   NS_LOG_FUNCTION (this << seq << size);
   // Note that a particular sequence has been sent
   if (seq == m_next)
@@ -163,7 +163,7 @@ void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
 }
 
 Time RttEstimator::AckSeq (SequenceNumber32 ackSeq)
-{ 
+{
   NS_LOG_FUNCTION (this << ackSeq);
   // An ack has been received, calculate rtt and log this measurement
   // Note we use a linear search (O(n)) for this since for the common
@@ -188,7 +188,7 @@ Time RttEstimator::AckSeq (SequenceNumber32 ackSeq)
 }
 
 void RttEstimator::ClearSent ()
-{ 
+{
   NS_LOG_FUNCTION (this);
   // Clear all history entries
   m_next = 1;
@@ -209,7 +209,7 @@ void RttEstimator::ResetMultiplier ()
 }
 
 void RttEstimator::Reset ()
-{ 
+{
   NS_LOG_FUNCTION (this);
   // Reset to initial state
   m_next = 1;
@@ -227,7 +227,7 @@ void RttEstimator::Reset ()
 
 NS_OBJECT_ENSURE_REGISTERED (RttMeanDeviation);
 
-TypeId 
+TypeId
 RttMeanDeviation::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::RttMeanDeviation")
@@ -243,8 +243,8 @@ RttMeanDeviation::GetTypeId (void)
 }
 
 RttMeanDeviation::RttMeanDeviation() :
-  m_variance (0) 
-{ 
+  m_variance (0)
+{
   NS_LOG_FUNCTION (this);
 }
 
@@ -285,11 +285,11 @@ Time RttMeanDeviation::RetransmitTimeout ()
   if (temp < m_minRto.ToInteger (Time::MS))
     {
       temp = m_minRto.ToInteger (Time::MS);
-    } 
+    }
   temp = temp * m_multiplier; // Apply backoff
   Time retval = Time::FromInteger (temp, Time::MS);
   NS_LOG_DEBUG ("RetransmitTimeout:  return " << retval.GetSeconds ());
-  return (retval);  
+  return (retval);
 }
 
 Ptr<RttEstimator> RttMeanDeviation::Copy () const
@@ -299,7 +299,7 @@ Ptr<RttEstimator> RttMeanDeviation::Copy () const
 }
 
 void RttMeanDeviation::Reset ()
-{ 
+{
   NS_LOG_FUNCTION (this);
   // Reset to initial state
   m_variance = Seconds (0);

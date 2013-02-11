@@ -62,7 +62,7 @@ ObjectFactory::Set (std::string name, const AttributeValue &value)
     {
       return;
     }
-  
+
   struct TypeId::AttributeInformation info;
   if (!m_tid.LookupAttributeByName (name, &info))
     {
@@ -78,14 +78,14 @@ ObjectFactory::Set (std::string name, const AttributeValue &value)
   m_parameters.Add (name, info.checker, value.Copy ());
 }
 
-TypeId 
+TypeId
 ObjectFactory::GetTypeId (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_tid;
 }
 
-Ptr<Object> 
+Ptr<Object>
 ObjectFactory::Create (void) const
 {
   NS_LOG_FUNCTION (this);

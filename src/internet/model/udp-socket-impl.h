@@ -42,7 +42,7 @@ class UdpL4Protocol;
 /**
  * \ingroup udp
  * \brief A sockets interface to UDP
- * 
+ *
  * This class subclasses ns3::UdpSocket, and provides a socket interface
  * to ns3's implementation of UDP.
  */
@@ -78,7 +78,7 @@ public:
   virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flags);
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
                                 Address &fromAddress);
-  virtual int GetSockName (Address &address) const; 
+  virtual int GetSockName (Address &address) const;
   virtual int MulticastJoinGroup (uint32_t interfaceIndex, const Address &groupAddress);
   virtual int MulticastLeaveGroup (uint32_t interfaceIndex, const Address &groupAddress);
   virtual void BindToNetDevice (Ptr<NetDevice> netdevice);
@@ -86,7 +86,7 @@ public:
   virtual bool GetAllowBroadcast () const;
 
 private:
-  // Attributes set through UdpSocket base class 
+  // Attributes set through UdpSocket base class
   virtual void SetRcvBufSize (uint32_t size);
   virtual uint32_t GetRcvBufSize (void) const;
   virtual void SetIpMulticastTtl (uint8_t ipTtl);
@@ -102,7 +102,7 @@ private:
   friend class UdpSocketFactory;
   // invoked by Udp class
   int FinishBind (void);
-  void ForwardUp (Ptr<Packet> p, Ipv4Header header, uint16_t port, 
+  void ForwardUp (Ptr<Packet> p, Ipv4Header header, uint16_t port,
                   Ptr<Ipv4Interface> incomingInterface);
   void ForwardUp6 (Ptr<Packet> p, Ipv6Header header, uint16_t port);
   void Destroy (void);
@@ -111,10 +111,10 @@ private:
   int DoSendTo (Ptr<Packet> p, const Address &daddr);
   int DoSendTo (Ptr<Packet> p, Ipv4Address daddr, uint16_t dport);
   int DoSendTo (Ptr<Packet> p, Ipv6Address daddr, uint16_t dport);
-  void ForwardIcmp (Ipv4Address icmpSource, uint8_t icmpTtl, 
+  void ForwardIcmp (Ipv4Address icmpSource, uint8_t icmpTtl,
                     uint8_t icmpType, uint8_t icmpCode,
                     uint32_t icmpInfo);
-  void ForwardIcmp6 (Ipv6Address icmpSource, uint8_t icmpTtl, 
+  void ForwardIcmp6 (Ipv6Address icmpSource, uint8_t icmpTtl,
                      uint8_t icmpType, uint8_t icmpCode,
                      uint32_t icmpInfo);
 

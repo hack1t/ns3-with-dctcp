@@ -94,7 +94,7 @@ MatchContainer::Set (std::string name, const AttributeValue &value)
       object->SetAttribute (name, value);
     }
 }
-void 
+void
 MatchContainer::Connect (std::string name, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << name << &cb);
@@ -106,7 +106,7 @@ MatchContainer::Connect (std::string name, const CallbackBase &cb)
       object->TraceConnect (name, ctx, cb);
     }
 }
-void 
+void
 MatchContainer::ConnectWithoutContext (std::string name, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << name << &cb);
@@ -117,7 +117,7 @@ MatchContainer::ConnectWithoutContext (std::string name, const CallbackBase &cb)
       object->TraceConnectWithoutContext (name, cb);
     }
 }
-void 
+void
 MatchContainer::Disconnect (std::string name, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << name << &cb);
@@ -129,7 +129,7 @@ MatchContainer::Disconnect (std::string name, const CallbackBase &cb)
       object->TraceDisconnect (name, ctx, cb);
     }
 }
-void 
+void
 MatchContainer::DisconnectWithoutContext (std::string name, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << name << &cb);
@@ -198,7 +198,7 @@ ArrayMatcher::Matches (uint32_t i) const
       std::string upperBound = m_element.substr (dash + 1, rightBracket - (dash + 1));
       uint32_t min;
       uint32_t max;
-      if (StringToUint32 (lowerBound, &min) && 
+      if (StringToUint32 (lowerBound, &min) &&
           StringToUint32 (upperBound, &max) &&
           i >= min && i <= max)
         {
@@ -281,7 +281,7 @@ Resolver::Canonicalize (void)
     }
 }
 
-void 
+void
 Resolver::Resolve (Ptr<Object> root)
 {
   NS_LOG_FUNCTION (this << root);
@@ -302,7 +302,7 @@ Resolver::GetResolvedPath (void) const
   return fullPath;
 }
 
-void 
+void
 Resolver::DoResolveOne (Ptr<Object> object)
 {
   NS_LOG_FUNCTION (this << object);
@@ -321,13 +321,13 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
   if (next == std::string::npos)
     {
       //
-      // If root is zero, we're beginning to see if we can use the object name 
-      // service to resolve this path.  It is impossible to have a object name 
+      // If root is zero, we're beginning to see if we can use the object name
+      // service to resolve this path.  It is impossible to have a object name
       // associated with the root of the object name service since that root
       // is not an object.  This path must be referring to something in another
       // namespace and it will have been found already since the name service
       // is always consulted last.
-      // 
+      //
       if (root)
         {
           DoResolveOne (root);
@@ -338,10 +338,10 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
   std::string pathLeft = path.substr (next, path.size ()-next);
 
   //
-  // If root is zero, we're beginning to see if we can use the object name 
-  // service to resolve this path.  In this case, we must see the name space 
-  // "/Names" on the front of this path.  There is no object associated with 
-  // the root of the "/Names" namespace, so we just ignore it and move on to 
+  // If root is zero, we're beginning to see if we can use the object name
+  // service to resolve this path.  In this case, we must see the name space
+  // "/Names" on the front of this path.  There is no object associated with
+  // the root of the "/Names" namespace, so we just ignore it and move on to
   // the next segment.
   //
   if (root == 0)
@@ -400,7 +400,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
       DoResolve (pathLeft, object);
       m_workStack.pop_back ();
     }
-  else 
+  else
     {
       // this is a normal attribute.
       TypeId tid = root->GetInstanceTypeId ();
@@ -434,7 +434,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
               m_workStack.pop_back ();
             }
           // attempt to cast to an object vector.
-          const ObjectPtrContainerChecker *vectorChecker = 
+          const ObjectPtrContainerChecker *vectorChecker =
             dynamic_cast<const ObjectPtrContainerChecker *> (PeekPointer (info.checker));
           if (vectorChecker != 0)
             {
@@ -457,7 +457,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
     }
 }
 
-void 
+void
 Resolver::DoArrayResolve (std::string path, const ObjectPtrContainerValue &container)
 {
   NS_LOG_FUNCTION(this << path << &container);
@@ -487,7 +487,7 @@ Resolver::DoArrayResolve (std::string path, const ObjectPtrContainerValue &conta
 }
 
 
-class ConfigImpl 
+class ConfigImpl
 {
 public:
   void Set (std::string path, const AttributeValue &value);
@@ -509,7 +509,7 @@ private:
   Roots m_roots;
 };
 
-void 
+void
 ConfigImpl::ParsePath (std::string path, std::string *root, std::string *leaf) const
 {
   NS_LOG_FUNCTION (this << path << root << leaf);
@@ -521,7 +521,7 @@ ConfigImpl::ParsePath (std::string path, std::string *root, std::string *leaf) c
   NS_LOG_FUNCTION (path << *root << *leaf);
 }
 
-void 
+void
 ConfigImpl::Set (std::string path, const AttributeValue &value)
 {
   NS_LOG_FUNCTION (this << path << &value);
@@ -531,7 +531,7 @@ ConfigImpl::Set (std::string path, const AttributeValue &value)
   Config::MatchContainer container = LookupMatches (root);
   container.Set (leaf, value);
 }
-void 
+void
 ConfigImpl::ConnectWithoutContext (std::string path, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << path << &cb);
@@ -540,7 +540,7 @@ ConfigImpl::ConnectWithoutContext (std::string path, const CallbackBase &cb)
   Config::MatchContainer container = LookupMatches (root);
   container.ConnectWithoutContext (leaf, cb);
 }
-void 
+void
 ConfigImpl::DisconnectWithoutContext (std::string path, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << path << &cb);
@@ -549,7 +549,7 @@ ConfigImpl::DisconnectWithoutContext (std::string path, const CallbackBase &cb)
   Config::MatchContainer container = LookupMatches (root);
   container.DisconnectWithoutContext (leaf, cb);
 }
-void 
+void
 ConfigImpl::Connect (std::string path, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << path << &cb);
@@ -559,7 +559,7 @@ ConfigImpl::Connect (std::string path, const CallbackBase &cb)
   Config::MatchContainer container = LookupMatches (root);
   container.Connect (leaf, cb);
 }
-void 
+void
 ConfigImpl::Disconnect (std::string path, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (this << path << &cb);
@@ -570,11 +570,11 @@ ConfigImpl::Disconnect (std::string path, const CallbackBase &cb)
   container.Disconnect (leaf, cb);
 }
 
-Config::MatchContainer 
+Config::MatchContainer
 ConfigImpl::LookupMatches (std::string path)
 {
   NS_LOG_FUNCTION (this << path);
-  class LookupMatchesResolver : public Resolver 
+  class LookupMatchesResolver : public Resolver
   {
   public:
     LookupMatchesResolver (std::string path)
@@ -602,14 +602,14 @@ ConfigImpl::LookupMatches (std::string path)
   return Config::MatchContainer (resolver.m_objects, resolver.m_contexts, path);
 }
 
-void 
+void
 ConfigImpl::RegisterRootNamespaceObject (Ptr<Object> obj)
 {
   NS_LOG_FUNCTION (this << obj);
   m_roots.push_back (obj);
 }
 
-void 
+void
 ConfigImpl::UnregisterRootNamespaceObject (Ptr<Object> obj)
 {
   NS_LOG_FUNCTION (this << obj);
@@ -624,13 +624,13 @@ ConfigImpl::UnregisterRootNamespaceObject (Ptr<Object> obj)
     }
 }
 
-uint32_t 
+uint32_t
 ConfigImpl::GetRootNamespaceObjectN (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_roots.size ();
 }
-Ptr<Object> 
+Ptr<Object>
 ConfigImpl::GetRootNamespaceObject (uint32_t i) const
 {
   NS_LOG_FUNCTION (this << i);
@@ -724,13 +724,13 @@ void DisconnectWithoutContext (std::string path, const CallbackBase &cb)
   NS_LOG_FUNCTION (path << &cb);
   Singleton<ConfigImpl>::Get ()->DisconnectWithoutContext (path, cb);
 }
-void 
+void
 Connect (std::string path, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (path << &cb);
   Singleton<ConfigImpl>::Get ()->Connect (path, cb);
 }
-void 
+void
 Disconnect (std::string path, const CallbackBase &cb)
 {
   NS_LOG_FUNCTION (path << &cb);

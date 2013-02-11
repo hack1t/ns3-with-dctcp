@@ -40,7 +40,7 @@ namespace ns3 {
  * as methods for serialization to and deserialization from a byte buffer.
  */
 
-class TcpHeader : public Header 
+class TcpHeader : public Header
 {
 public:
   TcpHeader ();
@@ -130,17 +130,17 @@ public:
    * If you want to use tcp checksums, you should call this
    * method prior to adding the header to a packet.
    */
-  void InitializeChecksum (Ipv4Address source, 
+  void InitializeChecksum (Ipv4Address source,
                            Ipv4Address destination,
                            uint8_t protocol);
-  void InitializeChecksum (Ipv6Address source, 
+  void InitializeChecksum (Ipv6Address source,
                            Ipv6Address destination,
                            uint8_t protocol);
-  void InitializeChecksum (Address source, 
+  void InitializeChecksum (Address source,
                            Address destination,
                            uint8_t protocol);
 
-  typedef enum { NONE = 0, FIN = 1, SYN = 2, RST = 4, PSH = 8, ACK = 16, 
+  typedef enum { NONE = 0, FIN = 1, SYN = 2, RST = 4, PSH = 8, ACK = 16,
                  URG = 32, ECE = 64, CWR = 128} Flags_t;
 
   static TypeId GetTypeId (void);
