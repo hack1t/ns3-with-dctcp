@@ -72,7 +72,7 @@ void TcpHeader::SetLength (uint8_t length)
 {
   m_length = length;
 }
-void TcpHeader::SetFlags (uint8_t flags)
+void TcpHeader::SetFlags (uint16_t flags)
 {
   m_flags = flags;
 }
@@ -105,7 +105,7 @@ uint8_t  TcpHeader::GetLength () const
 {
   return m_length;
 }
-uint8_t  TcpHeader::GetFlags () const
+uint16_t  TcpHeader::GetFlags () const
 {
   return m_flags;
 }
@@ -249,6 +249,10 @@ void TcpHeader::Print (std::ostream &os)  const
         {
           os<<" CWR ";
         }
+      if((m_flags & NS) != 0)
+        {
+          os<<" NS ";
+        }
       os<<"]";
     }
   os<<" Seq="<<m_sequenceNumber<<" Ack="<<m_ackNumber<<" Win="<<m_windowSize;
@@ -288,7 +292,7 @@ uint32_t TcpHeader::Deserialize (Buffer::Iterator start)
   m_sequenceNumber = i.ReadNtohU32 ();
   m_ackNumber = i.ReadNtohU32 ();
   uint16_t field = i.ReadNtohU16 ();
-  m_flags = field & 0x3F;
+  m_flags = field & 0x1FF;
   m_length = field>>12;
   m_windowSize = i.ReadNtohU16 ();
   i.Next (2);

@@ -74,7 +74,7 @@ public:
   /**
    * \param flags the flags for this TcpHeader
    */
-  void SetFlags (uint8_t flags);
+  void SetFlags (uint16_t flags);
   /**
    * \param windowSize the window size for this TcpHeader
    */
@@ -109,7 +109,7 @@ public:
   /**
    * \return the flags for this TcpHeader
    */
-  uint8_t  GetFlags () const;
+  uint16_t  GetFlags () const;
   /**
    * \return the window size for this TcpHeader
    */
@@ -141,7 +141,7 @@ public:
                            uint8_t protocol);
 
   typedef enum { NONE = 0, FIN = 1, SYN = 2, RST = 4, PSH = 8, ACK = 16,
-                 URG = 32, ECE = 64, CWR = 128} Flags_t;
+                 URG = 32, ECE = 64, CWR = 128, NS = 256} Flags_t;
 
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
@@ -163,7 +163,7 @@ private:
   SequenceNumber32 m_sequenceNumber;
   SequenceNumber32 m_ackNumber;
   uint8_t m_length; // really a uint4_t
-  uint8_t m_flags;      // really a uint6_t
+  uint16_t m_flags;      // really a uint9_t
   uint16_t m_windowSize;
   uint16_t m_urgentPointer;
 
