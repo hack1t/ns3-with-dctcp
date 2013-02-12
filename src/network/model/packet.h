@@ -553,6 +553,20 @@ public:
   void SetNixVector (Ptr<NixVector>);
   Ptr<NixVector> GetNixVector (void) const;
 
+  /**
+   * \returns offset at which IPv4 or IPv6 header was found
+   *
+   * IPv4 or IPv6 header that was found in packet is placed in
+   * header argument.
+   */
+  uint32_t GetIpHeader (Ptr<Header> &header) const;
+
+  /**
+   * This functions replaces bits starting at offset with
+   * the bits from the header
+   */
+  void ReplaceHeader (Ptr<const Header> header, uint32_t offset);
+
 private:
   Packet (const Buffer &buffer, const ByteTagList &byteTagList,
           const PacketTagList &packetTagList, const PacketMetadata &metadata);

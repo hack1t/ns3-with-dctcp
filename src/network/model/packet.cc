@@ -297,6 +297,57 @@ Packet::PeekHeader (Header &header) const
   NS_LOG_FUNCTION (this << &header);
   return deserialized;
 }
+
+uint32_t
+Packet::GetIpHeader (Ptr<Header> &header) const
+{
+  if (!PacketMetadata::IsEnabled())
+    {
+      NS_LOG_WARN ("Packet metadata isn't enabled - can't use congestion notifications");
+      return -1;
+    }
+
+  int offset = 0;
+  PacketMetadata::ItemIterator metadataIterator = BeginItem ();
+  PacketMetadata::Item item;
+  while (metadataIterator.HasNext ())
+    {
+      item = metadataIterator.Next ();
+      if (item.tid.GetUid ())
+        {
+          NS_LOG_FUNCTION ("item name: " << item.tid.GetName ());
+          if(item.tid.GetName () == "ns3::Ipv4Header" ||
+              item.tid.GetName () == "ns3::IPv6Header")
+            {
+              Callback<ObjectBase*> constructor = item.tid.GetConstructor ();
+
+              NS_ASSERT (!constructor.IsNull ());
+              ObjectBase *instance = constructor ();
+              NS_ASSERT (instance != 0);
+              header = dynamic_cast<Header *> (instance);
+              NS_ASSERT (!!header);
+
+              Buffer::Iterator iter = m_buffer.Begin ();
+              iter.Next (offset);
+
+              header->Deserialize (iter);
+              return offset;
+            }
+          offset += item.currentSize;
+        }
+    }
+
+  return -1;
+}
+
+void
+Packet::ReplaceHeader (Ptr<const Header> header, uint32_t offset)
+{
+  Buffer::Iterator iter = m_buffer.Begin ();
+  iter.Next(offset);
+  header->Serialize (iter);
+}
+
 void
 Packet::AddTrailer (const Trailer &trailer)
 {
