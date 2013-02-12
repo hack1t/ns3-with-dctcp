@@ -395,8 +395,18 @@ Socket::SetIpTos (uint8_t tos)
 {
   Address address;
   GetSockName (address);
-  m_manualIpTos = true;
-  m_ipTos = tos;
+  if (tos <= 0x3 || tos > 0xff)
+    {
+      //Print a warning, because we shouldn't set ECN bits manually
+      NS_LOG_WARN ("Invalid IPV4_TOS value. Using default.");
+      m_manualIpTos = false;
+      m_ipTos = 0;
+    }
+  else
+    {
+      m_manualIpTos = true;
+      m_ipTos = tos;
+    }
 }
 
 uint8_t
@@ -424,10 +434,10 @@ Socket::SetIpv6Tclass (int tclass)
   GetSockName (address);
 
   //If -1 or invalid values, use default
-  if (tclass == -1 || tclass < -1 || tclass > 0xff)
+  if (tclass == -1 || tclass < -1 || tclass <= 0x3 || tclass > 0xff)
     {
       //Print a warning
-      if (tclass < -1 || tclass > 0xff)
+      if (tclass != -1)
         {
           NS_LOG_WARN ("Invalid IPV6_TCLASS value. Using default.");
         }
