@@ -261,7 +261,7 @@ int Ipv6RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address& toA
                 }
             }
 
-          ipv6->Send (p, route->GetSource (), dst, m_protocol, route);
+          ipv6->Send (p, route->GetSource (), dst, 0, m_protocol, route);
         }
       else
         {

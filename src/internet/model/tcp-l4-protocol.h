@@ -95,15 +95,16 @@ public:
    * \param packet The packet to send
    * \param saddr The source Ipv4Address
    * \param daddr The destination Ipv4Address
+   * \param tos   The Type Of Service field value
    * \param sport The source port number
    * \param dport The destination port number
    * \param oif The output interface bound. Defaults to null (unspecified).
    */
   void Send (Ptr<Packet> packet,
-             Ipv4Address saddr, Ipv4Address daddr,
+             Ipv4Address saddr, Ipv4Address daddr, uint8_t tos,
              uint16_t sport, uint16_t dport, Ptr<NetDevice> oif = 0);
   void Send (Ptr<Packet> packet,
-             Ipv6Address saddr, Ipv6Address daddr,
+             Ipv6Address saddr, Ipv6Address daddr, uint8_t tClass,
              uint16_t sport, uint16_t dport, Ptr<NetDevice> oif = 0);
   /**
    * \brief Receive a packet up the protocol stack
@@ -161,9 +162,9 @@ private:
 private:
   friend class TcpSocketBase;
   void SendPacket (Ptr<Packet>, const TcpHeader &,
-                   Ipv4Address, Ipv4Address, Ptr<NetDevice> oif = 0);
+                   Ipv4Address, Ipv4Address, uint8_t tos, Ptr<NetDevice> oif = 0);
   void SendPacket (Ptr<Packet>, const TcpHeader &,
-                   Ipv6Address, Ipv6Address, Ptr<NetDevice> oif = 0);
+                   Ipv6Address, Ipv6Address, uint8_t tClass, Ptr<NetDevice> oif = 0);
   TcpL4Protocol (const TcpL4Protocol &o);
   TcpL4Protocol &operator = (const TcpL4Protocol &o);
 

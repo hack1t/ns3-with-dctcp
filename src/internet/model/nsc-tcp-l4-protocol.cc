@@ -363,6 +363,8 @@ void NscTcpL4Protocol::send_callback (const void* data, int datalen)
   // Not using the IP header makes integration easier, but it destroys
   // eg. ECN.
   const uint8_t *rawdata = reinterpret_cast<const uint8_t *>(data);
+  // Get TOS
+  uint8_t tos = *(rawdata + 8);
   rawdata += 20; // skip IP header. IP options aren't supported at this time.
   datalen -= 20;
   p = Create<Packet> (rawdata, datalen);
@@ -378,7 +380,7 @@ void NscTcpL4Protocol::send_callback (const void* data, int datalen)
   Ptr<Ipv4L3Protocol> ipv4 = m_node->GetObject<Ipv4L3Protocol> ();
   NS_ASSERT_MSG (ipv4, "nsc callback invoked, but node has no ipv4 object");
 
-  m_downTarget (p, saddr, daddr, PROT_NUMBER, 0);
+  m_downTarget (p, saddr, daddr, tos, PROT_NUMBER, 0);
   m_nscStack->if_send_finish (0);
 }
 

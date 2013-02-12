@@ -163,6 +163,7 @@ public:
    * \param packet packet to send
    * \param source source address of packet
    * \param destination address of packet
+   * \param Type Of Service of packet
    * \param protocol number of packet
    * \param route route entry
    *
@@ -170,7 +171,7 @@ public:
    * down the stack to the MAC and PHY layers.
    */
   void Send (Ptr<Packet> packet, Ipv4Address source,
-             Ipv4Address destination, uint8_t protocol, Ptr<Ipv4Route> route);
+             Ipv4Address destination, uint8_t tos, uint8_t protocol, Ptr<Ipv4Route> route);
   /**
    * \param packet packet to send
    * \param ipHeader IP Header

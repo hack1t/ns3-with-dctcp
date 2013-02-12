@@ -224,7 +224,7 @@ public:
    * \brief This function is called by higher layer protocol when sending packets
    */
   void Send (Ptr<Packet> packet, Ipv4Address source,
-             Ipv4Address destination, uint8_t protocol, Ptr<Ipv4Route> route);
+             Ipv4Address destination, uint8_t tos, uint8_t protocol, Ptr<Ipv4Route> route);
   /*
    * \brief This function is called to add ack request header for network acknowledgement
    */

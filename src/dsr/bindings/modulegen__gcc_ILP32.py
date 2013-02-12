@@ -7231,10 +7231,10 @@ def register_Ns3Ipv4_methods(root_module, cls):
                    'ns3::Ipv4Address', 
                    [param('ns3::Ptr< ns3::NetDevice const >', 'device'), param('ns3::Ipv4Address', 'dst'), param('ns3::Ipv4InterfaceAddress::InterfaceAddressScope_e', 'scope')], 
                    is_pure_virtual=True, is_virtual=True)
-    ## ipv4.h (module 'internet'): void ns3::Ipv4::Send(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Address source, ns3::Ipv4Address destination, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
+    ## ipv4.h (module 'internet'): void ns3::Ipv4::Send(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Address source, ns3::Ipv4Address destination, uint8_t tos, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
     cls.add_method('Send', 
                    'void', 
-                   [param('ns3::Ptr< ns3::Packet >', 'packet'), param('ns3::Ipv4Address', 'source'), param('ns3::Ipv4Address', 'destination'), param('uint8_t', 'protocol'), param('ns3::Ptr< ns3::Ipv4Route >', 'route')], 
+                   [param('ns3::Ptr< ns3::Packet >', 'packet'), param('ns3::Ipv4Address', 'source'), param('ns3::Ipv4Address', 'destination'), param('uint8_t', 'tos'), param('uint8_t', 'protocol'), param('ns3::Ptr< ns3::Ipv4Route >', 'route')],
                    is_pure_virtual=True, is_virtual=True)
     ## ipv4.h (module 'internet'): void ns3::Ipv4::SendWithHeader(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Header ipHeader, ns3::Ptr<ns3::Ipv4Route> route) [member function]
     cls.add_method('SendWithHeader', 
@@ -7553,10 +7553,10 @@ def register_Ns3Ipv4L3Protocol_methods(root_module, cls):
                    'ns3::Ipv4Address', 
                    [param('ns3::Ptr< ns3::NetDevice const >', 'device'), param('ns3::Ipv4Address', 'dst'), param('ns3::Ipv4InterfaceAddress::InterfaceAddressScope_e', 'scope')], 
                    is_virtual=True)
-    ## ipv4-l3-protocol.h (module 'internet'): void ns3::Ipv4L3Protocol::Send(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Address source, ns3::Ipv4Address destination, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
+    ## ipv4-l3-protocol.h (module 'internet'): void ns3::Ipv4L3Protocol::Send(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Address source, ns3::Ipv4Address destination, uint8_t tos, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
     cls.add_method('Send', 
                    'void', 
-                   [param('ns3::Ptr< ns3::Packet >', 'packet'), param('ns3::Ipv4Address', 'source'), param('ns3::Ipv4Address', 'destination'), param('uint8_t', 'protocol'), param('ns3::Ptr< ns3::Ipv4Route >', 'route')], 
+                   [param('ns3::Ptr< ns3::Packet >', 'packet'), param('ns3::Ipv4Address', 'source'), param('ns3::Ipv4Address', 'destination'), param('uint8_t', 'tos'), param('uint8_t', 'protocol'), param('ns3::Ptr< ns3::Ipv4Route >', 'route')],
                    is_virtual=True)
     ## ipv4-l3-protocol.h (module 'internet'): void ns3::Ipv4L3Protocol::SendWithHeader(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Header ipHeader, ns3::Ptr<ns3::Ipv4Route> route) [member function]
     cls.add_method('SendWithHeader', 
@@ -10521,10 +10521,10 @@ def register_Ns3DsrDsrRouting_methods(root_module, cls):
     cls.add_method('SearchNextHop', 
                    'ns3::Ipv4Address', 
                    [param('ns3::Ipv4Address', 'ipv4Address'), param('std::vector< ns3::Ipv4Address > &', 'vec')])
-    ## dsr-routing.h (module 'dsr'): void ns3::dsr::DsrRouting::Send(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Address source, ns3::Ipv4Address destination, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
+    ## dsr-routing.h (module 'dsr'): void ns3::dsr::DsrRouting::Send(ns3::Ptr<ns3::Packet> packet, ns3::Ipv4Address source, ns3::Ipv4Address destination, uint8_t tos, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
     cls.add_method('Send', 
                    'void', 
-                   [param('ns3::Ptr< ns3::Packet >', 'packet'), param('ns3::Ipv4Address', 'source'), param('ns3::Ipv4Address', 'destination'), param('uint8_t', 'protocol'), param('ns3::Ptr< ns3::Ipv4Route >', 'route')])
+                   [param('ns3::Ptr< ns3::Packet >', 'packet'), param('ns3::Ipv4Address', 'source'), param('ns3::Ipv4Address', 'destination'), param('uint8_t', 'tos'), param('uint8_t', 'protocol'), param('ns3::Ptr< ns3::Ipv4Route >', 'route')])
     ## dsr-routing.h (module 'dsr'): void ns3::dsr::DsrRouting::SendAck(uint16_t ackId, ns3::Ipv4Address destination, ns3::Ipv4Address realSrc, ns3::Ipv4Address realDst, uint8_t protocol, ns3::Ptr<ns3::Ipv4Route> route) [member function]
     cls.add_method('SendAck', 
                    'void', 

@@ -82,7 +82,7 @@ TcpSocketBase::GetTypeId (void)
     .AddAttribute ("IcmpCallback6", "Callback invoked whenever an icmpv6 error is received on this socket.",
                    CallbackValue (),
                    MakeCallbackAccessor (&TcpSocketBase::m_icmpCallback6),
-                   MakeCallbackChecker ())                   
+                   MakeCallbackChecker ())
     .AddTraceSource ("RTO",
                      "Retransmission timeout",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rto))
@@ -882,7 +882,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port
           h.SetDestinationPort (tcpHeader.GetSourcePort ());
           h.SetWindowSize (AdvertisedWindowSize ());
           AddOptions (h);
-          m_tcp->SendPacket (Create<Packet> (), h, header.GetDestination (), header.GetSource (), m_boundnetdevice);
+          m_tcp->SendPacket (Create<Packet> (), h, header.GetDestination (), header.GetSource (), header.GetTos (), m_boundnetdevice);
         }
       break;
     case SYN_SENT:
@@ -977,7 +977,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, Ipv6Header header, uint16_t port
           h.SetDestinationPort (tcpHeader.GetSourcePort ());
           h.SetWindowSize (AdvertisedWindowSize ());
           AddOptions (h);
-          m_tcp->SendPacket (Create<Packet> (), h, header.GetDestinationAddress (), header.GetSourceAddress (), m_boundnetdevice);
+          m_tcp->SendPacket (Create<Packet> (), h, header.GetDestinationAddress (), header.GetSourceAddress (), header.GetTrafficClass (), m_boundnetdevice);
         }
       break;
     case SYN_SENT:
@@ -1613,12 +1613,12 @@ TcpSocketBase::SendEmptyPacket (uint8_t flags)
   if (m_endPoint != 0)
     {
       m_tcp->SendPacket (p, header, m_endPoint->GetLocalAddress (),
-                         m_endPoint->GetPeerAddress (), m_boundnetdevice);
+                         m_endPoint->GetPeerAddress (), GetIpTos (), m_boundnetdevice);
     }
   else
     {
       m_tcp->SendPacket (p, header, m_endPoint6->GetLocalAddress (),
-                         m_endPoint6->GetPeerAddress (), m_boundnetdevice);
+                         m_endPoint6->GetPeerAddress (), GetIpv6Tclass (), m_boundnetdevice);
     }
   if (flags & TcpHeader::ACK)
     { // If sending an ACK, cancel the delay ACK as well
@@ -1875,12 +1875,12 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
   if (m_endPoint)
     {
       m_tcp->SendPacket (p, header, m_endPoint->GetLocalAddress (),
-                         m_endPoint->GetPeerAddress (), m_boundnetdevice);
+                         m_endPoint->GetPeerAddress (), GetIpTos (), m_boundnetdevice);
     }
   else
     {
       m_tcp->SendPacket (p, header, m_endPoint6->GetLocalAddress (),
-                         m_endPoint6->GetPeerAddress (), m_boundnetdevice);
+                         m_endPoint6->GetPeerAddress (), GetIpv6Tclass (), m_boundnetdevice);
     }
   m_rtt->SentSeq (seq, sz);       // notify the RTT
   // Notify the application of the data being sent unless this is a retransmit
@@ -2054,13 +2054,13 @@ TcpSocketBase::EstimateRtt (const TcpHeader& tcpHeader)
   Time nextRtt =  m_rtt->AckSeq (tcpHeader.GetAckNumber () );
 
   //nextRtt will be zero for dup acks.  Don't want to update lastRtt in that case
-  //but still needed to do list clearing that is done in AckSeq. 
+  //but still needed to do list clearing that is done in AckSeq.
   if(nextRtt != 0)
   {
     m_lastRtt = nextRtt;
     NS_LOG_FUNCTION(this << m_lastRtt);
   }
-  
+
 }
 
 // Called by the ReceivedAck() when new ACK received and by ProcessSynRcvd()
@@ -2188,12 +2188,12 @@ TcpSocketBase::PersistTimeout ()
   if (m_endPoint != 0)
     {
       m_tcp->SendPacket (p, tcpHeader, m_endPoint->GetLocalAddress (),
-                         m_endPoint->GetPeerAddress (), m_boundnetdevice);
+                         m_endPoint->GetPeerAddress (), GetIpTos (), m_boundnetdevice);
     }
   else
     {
       m_tcp->SendPacket (p, tcpHeader, m_endPoint6->GetLocalAddress (),
-                         m_endPoint6->GetPeerAddress (), m_boundnetdevice);
+                         m_endPoint6->GetPeerAddress (), GetIpv6Tclass (), m_boundnetdevice);
     }
   NS_LOG_LOGIC ("Schedule persist timeout at time "
                 << Simulator::Now ().GetSeconds () << " to expire at time "

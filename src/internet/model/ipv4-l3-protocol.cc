@@ -57,7 +57,7 @@ Ipv4L3Protocol::GetTypeId (void)
     .AddAttribute ("DefaultTos", "The TOS value set by default on all outgoing packets generated on this node.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&Ipv4L3Protocol::m_defaultTos),
-                   MakeUintegerChecker<uint8_t> ())
+                   MakeUintegerChecker<uint8_t> (0, 0xFC))
     .AddAttribute ("DefaultTtl", "The TTL value set by default on all outgoing packets generated on this node.",
                    UintegerValue (64),
                    MakeUintegerAccessor (&Ipv4L3Protocol::m_defaultTtl),
@@ -548,6 +548,7 @@ void
 Ipv4L3Protocol::Send (Ptr<Packet> packet,
                       Ipv4Address source,
                       Ipv4Address destination,
+                      uint8_t tos,
                       uint8_t protocol,
                       Ptr<Ipv4Route> route)
 {
@@ -563,13 +564,17 @@ Ipv4L3Protocol::Send (Ptr<Packet> packet,
       ttl = tag.GetTtl ();
     }
 
-  uint8_t tos = m_defaultTos;
+  uint8_t socketTos = m_defaultTos;
   SocketIpTosTag ipTosTag;
   found = packet->RemovePacketTag (ipTosTag);
   if (found)
     {
-      tos = ipTosTag.GetTos ();
+      socketTos = ipTosTag.GetTos ();
     }
+  /* Combine ECN part of tos argument with
+   * scoket provided TOS
+   */
+  tos = (tos & 0x3) | (socketTos & 0xFC);
 
   // Handle a few cases:
   // 1) packet is destined to limited broadcast address

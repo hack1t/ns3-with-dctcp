@@ -1300,6 +1300,7 @@ void
 DsrRouting::Send (Ptr<Packet> packet,
                   Ipv4Address source,
                   Ipv4Address destination,
+                  uint8_t tos,
                   uint8_t protocol,
                   Ptr<Ipv4Route> route)
 {
@@ -1601,7 +1602,9 @@ DsrRouting::SendRealDown (DsrNetworkQueueEntry & newEntry)
   Ipv4Address nextHop = newEntry.GetNextHopAddress ();
   Ptr<Packet> packet = newEntry.GetPacket ()->Copy ();
   Ptr<Ipv4Route> route = newEntry.GetIpv4Route ();
-  m_downTarget (packet, source, nextHop, GetProtocolNumber (), route);
+  /* TODO: TOS Should be carried in DsrNetworkQueueEntry
+   *        so we could send packet with appropriate TOS */
+  m_downTarget (packet, source, nextHop, 0, GetProtocolNumber (), route);
   return true;
 }
 
@@ -3128,7 +3131,7 @@ IpL4Protocol::DownTargetCallback6
 DsrRouting::GetDownTarget6 (void) const
 {
   NS_FATAL_ERROR ("Unimplemented");
-  return MakeNullCallback<void,Ptr<Packet>, Ipv6Address, Ipv6Address, uint8_t, Ptr<Ipv6Route> > ();
+  return MakeNullCallback<void,Ptr<Packet>, Ipv6Address, Ipv6Address, uint8_t, uint8_t, Ptr<Ipv6Route> > ();
 }
 
 void DsrRouting::Insert (Ptr<dsr::DsrOptions> option)

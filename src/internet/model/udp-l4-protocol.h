@@ -85,21 +85,16 @@ public:
    * \param packet The packet to send
    * \param saddr The source Ipv4Address
    * \param daddr The destination Ipv4Address
+   * \param tos   The Type Of Service field value
    * \param sport The source port number
    * \param dport The destination port number
    */
   void Send (Ptr<Packet> packet,
-             Ipv4Address saddr, Ipv4Address daddr, 
-             uint16_t sport, uint16_t dport);
+             Ipv4Address saddr, Ipv4Address daddr, uint8_t tos,
+             uint16_t sport, uint16_t dport, Ptr<Ipv4Route> route = 0);
   void Send (Ptr<Packet> packet,
-             Ipv4Address saddr, Ipv4Address daddr, 
-             uint16_t sport, uint16_t dport, Ptr<Ipv4Route> route);
-  void Send (Ptr<Packet> packet,
-             Ipv6Address saddr, Ipv6Address daddr, 
-             uint16_t sport, uint16_t dport);
-  void Send (Ptr<Packet> packet,
-             Ipv6Address saddr, Ipv6Address daddr, 
-             uint16_t sport, uint16_t dport, Ptr<Ipv6Route> route);
+             Ipv6Address saddr, Ipv6Address daddr, uint8_t tClass,
+             uint16_t sport, uint16_t dport, Ptr<Ipv6Route> route = 0);
   /**
    * \brief Receive a packet up the protocol stack
    * \param p The Packet to dump the contents into

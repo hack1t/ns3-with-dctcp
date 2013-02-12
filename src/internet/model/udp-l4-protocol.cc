@@ -409,30 +409,7 @@ UdpL4Protocol::Receive (Ptr<Packet> packet,
 
 void
 UdpL4Protocol::Send (Ptr<Packet> packet,
-                     Ipv4Address saddr, Ipv4Address daddr,
-                     uint16_t sport, uint16_t dport)
-{
-  NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport);
-
-  UdpHeader udpHeader;
-  if(Node::ChecksumEnabled ())
-    {
-      udpHeader.EnableChecksums ();
-      udpHeader.InitializeChecksum (saddr,
-                                    daddr,
-                                    PROT_NUMBER);
-    }
-  udpHeader.SetDestinationPort (dport);
-  udpHeader.SetSourcePort (sport);
-
-  packet->AddHeader (udpHeader);
-
-  m_downTarget (packet, saddr, daddr, PROT_NUMBER, 0);
-}
-
-void
-UdpL4Protocol::Send (Ptr<Packet> packet,
-                     Ipv4Address saddr, Ipv4Address daddr,
+                     Ipv4Address saddr, Ipv4Address daddr, uint8_t tos,
                      uint16_t sport, uint16_t dport, Ptr<Ipv4Route> route)
 {
   NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport << route);
@@ -450,35 +427,12 @@ UdpL4Protocol::Send (Ptr<Packet> packet,
 
   packet->AddHeader (udpHeader);
 
-  m_downTarget (packet, saddr, daddr, PROT_NUMBER, route);
+  m_downTarget (packet, saddr, daddr, tos, PROT_NUMBER, route);
 }
 
 void
 UdpL4Protocol::Send (Ptr<Packet> packet,
-                     Ipv6Address saddr, Ipv6Address daddr,
-                     uint16_t sport, uint16_t dport)
-{
-  NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport);
-
-  UdpHeader udpHeader;
-  if(Node::ChecksumEnabled ())
-    {
-      udpHeader.EnableChecksums ();
-      udpHeader.InitializeChecksum (saddr,
-                                    daddr,
-                                    PROT_NUMBER);
-    }
-  udpHeader.SetDestinationPort (dport);
-  udpHeader.SetSourcePort (sport);
-
-  packet->AddHeader (udpHeader);
-
-  m_downTarget6 (packet, saddr, daddr, PROT_NUMBER, 0);
-}
-
-void
-UdpL4Protocol::Send (Ptr<Packet> packet,
-                     Ipv6Address saddr, Ipv6Address daddr,
+                     Ipv6Address saddr, Ipv6Address daddr, uint8_t tClass,
                      uint16_t sport, uint16_t dport, Ptr<Ipv6Route> route)
 {
   NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport << route);
@@ -496,7 +450,7 @@ UdpL4Protocol::Send (Ptr<Packet> packet,
 
   packet->AddHeader (udpHeader);
 
-  m_downTarget6 (packet, saddr, daddr, PROT_NUMBER, route);
+  m_downTarget6 (packet, saddr, daddr, tClass, PROT_NUMBER, route);
 }
 
 void

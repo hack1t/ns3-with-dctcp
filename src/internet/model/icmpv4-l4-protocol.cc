@@ -117,7 +117,7 @@ Icmpv4L4Protocol::SendMessage (Ptr<Packet> packet, Ipv4Address source, Ipv4Addre
     }
   packet->AddHeader (icmp);
 
-  m_downTarget (packet, source, dest, PROT_NUMBER, route);
+  m_downTarget (packet, source, dest, 0, PROT_NUMBER, route);
 }
 void
 Icmpv4L4Protocol::SendDestUnreachFragNeeded (Ipv4Header header,

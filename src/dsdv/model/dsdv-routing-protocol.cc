@@ -1073,7 +1073,7 @@ RoutingProtocol::Send (Ptr<Ipv4Route> route,
   Ptr<Ipv4L3Protocol> l3 = m_ipv4->GetObject<Ipv4L3Protocol> ();
   NS_ASSERT (l3 != 0);
   Ptr<Packet> p = packet->Copy ();
-  l3->Send (p,route->GetSource (),header.GetDestination (),header.GetProtocol (),route);
+  l3->Send (p, route->GetSource (), header.GetDestination (), header.GetTos (), header.GetProtocol (), route);
 }
 
 void

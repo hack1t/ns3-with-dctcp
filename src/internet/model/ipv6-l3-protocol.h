@@ -161,10 +161,11 @@ public:
    * \param packet packet to send
    * \param source source address of packet
    * \param destination address of packet
+   * \param Traffic Class of packet
    * \param protocol number of packet
    * \param route route to take
    */
-  void Send (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination, uint8_t protocol, Ptr<Ipv6Route> route);
+  void Send (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination, uint8_t tClass, uint8_t protocol, Ptr<Ipv6Route> route);
 
   /**
    * \brief Set routing protocol for this stack.

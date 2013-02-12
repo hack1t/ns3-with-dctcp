@@ -251,7 +251,7 @@ Ipv4RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags,
           NS_LOG_LOGIC ("Route exists");
           if (!m_iphdrincl)
             {
-              ipv4->Send (p, route->GetSource (), dst, m_protocol, route);
+              ipv4->Send (p, route->GetSource (), dst, 0, m_protocol, route);
             }
           else
             {

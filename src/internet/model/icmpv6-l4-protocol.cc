@@ -851,7 +851,7 @@ void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address src, Ipv6Add
 
   tag.SetTtl (ttl);
   packet->AddPacketTag (tag);
-  m_downTarget (packet, src, dst, PROT_NUMBER, 0);
+  m_downTarget (packet, src, dst, 0, PROT_NUMBER, 0);
 }
 
 void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address dst, Icmpv6Header& icmpv6Hdr, uint8_t ttl)
@@ -877,7 +877,7 @@ void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address dst, Icmpv6H
 
       icmpv6Hdr.CalculatePseudoHeaderChecksum (src, dst, packet->GetSize () + icmpv6Hdr.GetSerializedSize (), PROT_NUMBER);
       packet->AddHeader (icmpv6Hdr);
-      m_downTarget (packet, src, dst, PROT_NUMBER, route);
+      m_downTarget (packet, src, dst, 0, PROT_NUMBER, route);
     }
   else
     {

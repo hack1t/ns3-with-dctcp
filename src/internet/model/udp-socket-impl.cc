@@ -540,7 +540,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
               // if the network mask is 255.255.255.255, do not convert dest
               NS_LOG_LOGIC ("Sending one copy from " << addri << " to " << dest
                                                      << " (mask is " << maski << ")");
-              m_udp->Send (p->Copy (), addri, dest,
+              m_udp->Send (p->Copy (), addri, dest, GetIpTos (),
                            m_endPoint->GetLocalPort (), port);
               NotifyDataSent (p->GetSize ());
               NotifySend (GetTxAvailable ());
@@ -551,7 +551,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
               Ipv4Address bcast = addri.GetSubnetDirectedBroadcast (maski);
               NS_LOG_LOGIC ("Sending one copy from " << addri << " to " << bcast
                                                      << " (mask is " << maski << ")");
-              m_udp->Send (p->Copy (), addri, bcast,
+              m_udp->Send (p->Copy (), addri, bcast, GetIpTos (),
                            m_endPoint->GetLocalPort (), port);
               NotifyDataSent (p->GetSize ());
               NotifySend (GetTxAvailable ());
@@ -562,8 +562,8 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
     }
   else if (m_endPoint->GetLocalAddress () != Ipv4Address::GetAny ())
     {
-      m_udp->Send (p->Copy (), m_endPoint->GetLocalAddress (), dest,
-                   m_endPoint->GetLocalPort (), port, 0);
+      m_udp->Send (p->Copy (), m_endPoint->GetLocalAddress (), dest, GetIpTos (),
+                   m_endPoint->GetLocalPort (), port);
       NotifyDataSent (p->GetSize ());
       NotifySend (GetTxAvailable ());
       return p->GetSize ();
@@ -573,6 +573,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
       Ipv4Header header;
       header.SetDestination (dest);
       header.SetProtocol (UdpL4Protocol::PROT_NUMBER);
+      header.SetTos (GetIpTos ());
       Socket::SocketErrno errno_;
       Ptr<Ipv4Route> route;
       Ptr<NetDevice> oif = m_boundnetdevice; //specify non-zero if bound to a specific device
@@ -597,7 +598,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
             }
 
           header.SetSource (route->GetSource ());
-          m_udp->Send (p->Copy (), header.GetSource (), header.GetDestination (),
+          m_udp->Send (p->Copy (), header.GetSource (), header.GetDestination (), header.GetTos (),
                        m_endPoint->GetLocalPort (), port, route);
           NotifyDataSent (p->GetSize ());
           return p->GetSize ();
@@ -691,8 +692,8 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
 
   if (m_endPoint6->GetLocalAddress () != Ipv6Address::GetAny ())
     {
-      m_udp->Send (p->Copy (), m_endPoint6->GetLocalAddress (), dest,
-                   m_endPoint6->GetLocalPort (), port, 0);
+      m_udp->Send (p->Copy (), m_endPoint6->GetLocalAddress (), dest, GetIpv6Tclass (),
+                   m_endPoint6->GetLocalPort (), port);
       NotifyDataSent (p->GetSize ());
       NotifySend (GetTxAvailable ());
       return p->GetSize ();
@@ -702,6 +703,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
       Ipv6Header header;
       header.SetDestinationAddress (dest);
       header.SetNextHeader (UdpL4Protocol::PROT_NUMBER);
+      header.SetTrafficClass (GetIpv6Tclass ());
       Socket::SocketErrno errno_;
       Ptr<Ipv6Route> route;
       Ptr<NetDevice> oif = m_boundnetdevice; //specify non-zero if bound to a specific device
@@ -711,7 +713,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
         {
           NS_LOG_LOGIC ("Route exists");
           header.SetSourceAddress (route->GetSource ());
-          m_udp->Send (p->Copy (), header.GetSourceAddress (), header.GetDestinationAddress (),
+          m_udp->Send (p->Copy (), header.GetSourceAddress (), header.GetDestinationAddress (), header.GetTrafficClass (),
                        m_endPoint6->GetLocalPort (), port, route);
           NotifyDataSent (p->GetSize ());
           return p->GetSize ();
