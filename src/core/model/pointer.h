@@ -161,7 +161,7 @@ template <typename T>
 bool
 PointerValue::GetAccessor (Ptr<T> &v) const
 {
-  Ptr<T> ptr = dynamic_cast<T*> (PeekPointer (m_value));
+  Ptr<T> ptr = dynamic_cast<T*> (GetPointer (m_value));
   if (ptr == 0)
     {
       return false;

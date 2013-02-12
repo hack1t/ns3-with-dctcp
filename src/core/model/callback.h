@@ -469,7 +469,7 @@ private:
                         "got=" << Demangle ( typeid (*other).name () ) << std::endl <<
                         "expected=" << Demangle ( typeid (CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> *).name () ));
       }
-    m_impl = const_cast<CallbackImplBase *> (PeekPointer (other));
+    m_impl = const_cast<CallbackImplBase *> (GetPointer (other));
   }
 };
 

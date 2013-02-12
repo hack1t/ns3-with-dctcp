@@ -102,6 +102,7 @@ public:
   Ptr (Ptr<U> const &o);
   ~Ptr ();
   Ptr<T> &operator = (Ptr const& o);
+  Ptr<T> &operator = (T *o);
 
   T *operator -> () const;
   T *operator -> ();
@@ -471,6 +472,19 @@ Ptr<T>::operator = (Ptr const& o)
     }
   m_ptr = o.m_ptr;
   Acquire ();
+  return *this;
+}
+
+template <typename T>
+Ptr<T> &
+Ptr<T>::operator = (T *o)
+{
+  if (m_ptr != 0)
+    {
+      m_ptr->Unref ();
+    }
+  m_ptr = o;
+  //We don't need Acquire since we're taking the custody over the pointer
   return *this;
 }
 

@@ -204,7 +204,7 @@ AttributeIterator::DoIterate (Ptr<Object> object)
       for (uint32_t i = 0; i < tid.GetAttributeN (); ++i)
         {
           struct TypeId::AttributeInformation info = tid.GetAttribute(i);
-          const PointerChecker *ptrChecker = dynamic_cast<const PointerChecker *> (PeekPointer (info.checker));
+          const PointerChecker *ptrChecker = dynamic_cast<const PointerChecker *> (GetPointer (info.checker));
           if (ptrChecker != 0)
             {
               NS_LOG_DEBUG ("pointer attribute " << info.name);
