@@ -39,7 +39,7 @@ namespace ns3 {
  * Sample code which shows how to create a new type of Header, and how to use it,
  * is shown in the sample file samples/main-packet-header.cc
  */
-class Header : public Chunk
+class Header : public SimpleRefCount<Header>, public Chunk
 {
 public:
   static TypeId GetTypeId (void);
