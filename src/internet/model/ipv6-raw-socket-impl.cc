@@ -186,6 +186,23 @@ int Ipv6RawSocketImpl::Send (Ptr<Packet> p, uint32_t flags)
 {
   NS_LOG_FUNCTION (this << p << flags);
   Inet6SocketAddress to = Inet6SocketAddress (m_dst, m_protocol);
+  /*
+   * Add tags for each socket option.
+   */
+  if (IsManualIpv6Tclass ())
+    {
+      SocketIpv6TclassTag ipTclassTag;
+      ipTclassTag.SetTclass (GetIpv6Tclass ());
+      p->AddPacketTag (ipTclassTag);
+    }
+
+  if (IsManualIpv6HopLimit ())
+    {
+      SocketIpv6HopLimitTag ipHopLimitTag;
+      ipHopLimitTag.SetHopLimit (GetIpv6HopLimit ());
+      p->AddPacketTag (ipHopLimitTag);
+    }
+
   return SendTo (p, flags, to);
 }
 
