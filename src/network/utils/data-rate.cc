@@ -22,6 +22,7 @@
 #include "ns3/nstime.h"
 #include "ns3/fatal-error.h"
 #include "ns3/log.h"
+#include <iomanip>
 
 NS_LOG_COMPONENT_DEFINE ("DataRate");
 
@@ -250,7 +251,26 @@ DataRate::DataRate (std::string rate)
 
 std::ostream &operator << (std::ostream &os, const DataRate &rate)
 {
-  os << rate.GetBitRate () << "bps";
+  double bitRate = rate.GetBitRate ();
+  std::string suffix = "bps";
+
+  if (bitRate >= 1000000000)
+    {
+      bitRate /= 1000000000;
+      suffix = "Gbps";
+    }
+  else if (bitRate >= 1000000)
+    {
+      bitRate /= 1000000;
+      suffix = "Mbps";
+    }
+  else if (bitRate >= 1000)
+    {
+      bitRate /= 1000;
+      suffix = "Kbps";
+    }
+
+  os << std::setprecision(6) << bitRate << suffix;
   return os;
 }
 std::istream &operator >> (std::istream &is, DataRate &rate)
