@@ -62,6 +62,12 @@ PacketMetadata::Enable (void)
   m_enable = true;
 }
 
+bool
+PacketMetadata::IsEnabled (void)
+{
+  return m_enable;
+}
+
 void
 PacketMetadata::EnableChecking (void)
 {

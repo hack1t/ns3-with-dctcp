@@ -125,6 +125,7 @@ private:
     bool m_hasReadTail;
   };
 
+  static bool IsEnabled (void);
   static void Enable (void);
   static void EnableChecking (void);
 
