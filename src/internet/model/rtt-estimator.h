@@ -60,7 +60,7 @@ public:
   static TypeId GetTypeId (void);
 
   RttEstimator();
-  RttEstimator (const RttEstimator&); 
+  RttEstimator (const RttEstimator&);
 
   virtual ~RttEstimator();
 
@@ -184,7 +184,7 @@ public:
   /**
    * \brief Resets sthe estimator.
    */
-  void Reset ();
+  virtual void Reset ();
 
   /**
    * \brief Sets the estimator Gain.
