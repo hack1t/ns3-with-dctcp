@@ -31,6 +31,7 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/udp-socket-factory.h"
 #include "packet-sink.h"
+#include <algorithm>
 
 namespace ns3 {
 
@@ -191,11 +192,23 @@ void PacketSink::HandleRead (Ptr<Socket> socket)
 void PacketSink::HandlePeerClose (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);
+  std::list<Ptr<Socket> >::iterator iter = std::find(m_socketList.begin(), m_socketList.end(), socket);
+  if (iter == m_socketList.end())
+    {
+      return;
+    }
+  m_socketList.erase(iter);
 }
 
 void PacketSink::HandlePeerError (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);
+  std::list<Ptr<Socket> >::iterator iter = std::find(m_socketList.begin(), m_socketList.end(), socket);
+  if (iter == m_socketList.end())
+    {
+      return;
+    }
+  m_socketList.erase(iter);
 }
 
 

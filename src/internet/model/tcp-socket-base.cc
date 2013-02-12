@@ -736,14 +736,15 @@ TcpSocketBase::CloseAndNotify (void)
     {
       NotifyNormalClose ();
     }
-  if (m_state != TIME_WAIT)
-    {
-      DeallocateEndPoint ();
-    }
   m_closeNotified = true;
   NS_LOG_INFO (TcpStateName[m_state] << " -> CLOSED");
   CancelAllTimers ();
   m_state = CLOSED;
+  DeallocateEndPoint ();
+  /*
+   * Nothing can't be called after the DeallocateEndPoint,
+   * Since we're might free TcpSocketBase instance inside this function!
+   */
 }
 
 
@@ -1648,9 +1649,11 @@ TcpSocketBase::SendRST (void)
 void
 TcpSocketBase::DeallocateEndPoint (void)
 {
+  CancelAllTimers ();
   if (m_endPoint != 0)
     {
       m_endPoint->SetDestroyCallback (MakeNullCallback<void> ());
+      m_endPoint->SetRxCallback (MakeNullCallback<void, Ptr<Packet>, Ipv4Header, uint16_t, Ptr<Ipv4Interface> > ());
       m_tcp->DeAllocate (m_endPoint);
       m_endPoint = 0;
       std::vector<Ptr<TcpSocketBase> >::iterator it
@@ -1659,11 +1662,11 @@ TcpSocketBase::DeallocateEndPoint (void)
         {
           m_tcp->m_sockets.erase (it);
         }
-      CancelAllTimers ();
     }
-  if (m_endPoint6 != 0)
+  else if (m_endPoint6 != 0)
     {
       m_endPoint6->SetDestroyCallback (MakeNullCallback<void> ());
+      m_endPoint6->SetRxCallback (MakeNullCallback<void, Ptr<Packet>, Ipv6Header, uint16_t> ());
       m_tcp->DeAllocate (m_endPoint6);
       m_endPoint6 = 0;
       std::vector<Ptr<TcpSocketBase> >::iterator it
@@ -1672,7 +1675,6 @@ TcpSocketBase::DeallocateEndPoint (void)
         {
           m_tcp->m_sockets.erase (it);
         }
-      CancelAllTimers ();
     }
 }
 
@@ -2154,7 +2156,7 @@ TcpSocketBase::LastAckTimeout (void)
     {
       CloseAndNotify ();
     }
-  if (!m_closeNotified)
+  else if (!m_closeNotified)
     {
       m_closeNotified = true;
     }
