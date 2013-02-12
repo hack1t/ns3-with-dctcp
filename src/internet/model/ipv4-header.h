@@ -224,6 +224,8 @@ public:
   virtual uint32_t GetSerializedSize (void) const;
   virtual void Serialize (Buffer::Iterator start) const;
   virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual bool IsCongestionAware(void) const;
+  virtual void SetCongested (void);
 private:
 
   enum FlagsE {

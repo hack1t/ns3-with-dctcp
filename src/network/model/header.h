@@ -89,6 +89,25 @@ public:
    * i.e.: (field1 val1 field2 val2 field3 val3) field4 val4 field5 val5
    */
   virtual void Print (std::ostream &os) const = 0;
+
+  /**
+   * This method is used inside of Active Queues to see if packet could
+   * be ECN marked or not.
+   *
+   * Every Header class, that inherits Header and is Congestion Aware,
+   * like IPv4Header or IPv6Header, should override this function
+   * with its version.
+   */
+  virtual bool IsCongestionAware(void) const { return false; }
+
+  /**
+   * This method is used inside of Active Queues to mark Header.
+   *
+   * Every Header class, that inherits Header and is Congestion Aware,
+   * like IPv4Header and IPv6Header, should override this function
+   * with its version.
+   */
+  virtual void SetCongested (void) { }
 };
 
 std::ostream & operator << (std::ostream &os, const Header &header);

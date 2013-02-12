@@ -429,4 +429,16 @@ Ipv4Header::Deserialize (Buffer::Iterator start)
   return GetSerializedSize ();
 }
 
+bool
+Ipv4Header::IsCongestionAware(void) const
+{
+  return (GetEcn() != NotECT);
+}
+
+void
+Ipv4Header::SetCongested (void)
+{
+  SetEcn (CE);
+}
+
 } // namespace ns3
