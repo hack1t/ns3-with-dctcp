@@ -188,12 +188,18 @@ Queue::ResetStatistics (void)
 }
 
 void
-Queue::Drop (Ptr<Packet> p)
+Queue::Drop (Ptr<Packet> p, bool wasEnqueued)
 {
   NS_LOG_FUNCTION (this << p);
 
   m_nTotalDroppedPackets++;
   m_nTotalDroppedBytes += p->GetSize ();
+
+  if (wasEnqueued)
+    {
+      m_nBytes -= p->GetSize ();
+      m_nPackets--;
+    }
 
   NS_LOG_LOGIC ("m_traceDrop (p)");
   m_traceDrop (p);

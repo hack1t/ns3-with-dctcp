@@ -157,7 +157,7 @@ private:
 
 protected:
   // called by subclasses to notify parent of packet drops.
-  void Drop (Ptr<Packet> packet);
+  void Drop (Ptr<Packet> packet, bool wasEnqueued = false);
 
 private:
   TracedCallback<Ptr<const Packet> > m_traceEnqueue;
