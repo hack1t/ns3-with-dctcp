@@ -83,6 +83,15 @@ TcpSocketBase::GetTypeId (void)
                    CallbackValue (),
                    MakeCallbackAccessor (&TcpSocketBase::m_icmpCallback6),
                    MakeCallbackChecker ())
+    .AddAttribute ("DCTCP", "DCTCP flavored socket",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&TcpSocketBase::m_DCTCP),
+                   MakeBooleanChecker ())
+    .AddAttribute ("DCTCPWeight",
+                   "Weight for calculating DCTCP's alpha parameter",
+                   DoubleValue (1.0 / 16.0),
+                   MakeDoubleAccessor (&TcpSocketBase::m_g),
+                   MakeDoubleChecker<double> (0, 1))
     .AddTraceSource ("RTO",
                      "Retransmission timeout",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rto))
@@ -133,6 +142,7 @@ TcpSocketBase::TcpSocketBase (void)
     m_connected (false),
     m_EcnState (NO_ECN),
     m_EcnEchoSeq (0),
+    m_EcnTransition (false),
     m_segmentSize (0),
     // For attribute initialization consistency (quiet valgrind)
     m_rWnd (0)
@@ -168,8 +178,12 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_shutdownRecv (sock.m_shutdownRecv),
     m_connected (sock.m_connected),
     m_msl (sock.m_msl),
+    m_ECN (sock.m_ECN),
     m_EcnState (sock.m_EcnState),
     m_EcnEchoSeq (sock.m_EcnEchoSeq),
+    m_DCTCP (sock.m_DCTCP),
+    m_g (sock.m_g),
+    m_EcnTransition (sock.m_EcnTransition),
     m_segmentSize (sock.m_segmentSize),
     m_maxWinSize (sock.m_maxWinSize),
     m_rWnd (sock.m_rWnd)
@@ -239,6 +253,7 @@ void
 TcpSocketBase::SetRtt (Ptr<RttEstimator> rtt)
 {
   m_rtt = rtt;
+  m_rtt->SetG(m_g);
 }
 
 /** Inherit from Socket class: Returns error code */
@@ -845,18 +860,28 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port
 
   if (m_EcnState & ECN_CONN)
     {
-      if ((tcpHeader.GetFlags () & TcpHeader::CWR) &&
+      if (!m_DCTCP && (tcpHeader.GetFlags () & TcpHeader::CWR) &&
             (m_EcnState & ECN_TX_ECHO))
         {
           NS_LOG_INFO ("Transmitter Halved the CWND. Stop sending ECN Echo.");
           m_EcnState &= ~ECN_TX_ECHO;
         }
 
-      if ((header.GetEcn () == Ipv4Header::CE) &&
-            !(m_EcnState & ECN_TX_ECHO))
+      if ((header.GetEcn () == Ipv4Header::CE) && !(m_EcnState & ECN_TX_ECHO))
         {
           NS_LOG_INFO ("Congestion was experienced. Start sending ECN Echo.");
           m_EcnState |= ECN_TX_ECHO;
+          if (m_DCTCP)
+            {
+              m_EcnTransition = true;
+              m_delAckCount = m_delAckMaxCount;
+            }
+        }
+      else if (m_DCTCP && (header.GetEcn () != Ipv4Header::CE) && (m_EcnState & ECN_TX_ECHO))
+        {
+          m_EcnState &= ~ECN_TX_ECHO;
+          m_EcnTransition = true;
+          m_delAckCount = m_delAckMaxCount;
         }
     }
 
@@ -1640,8 +1665,8 @@ TcpSocketBase::SendEmptyPacket (uint16_t flags)
   Ptr<Packet> p = Create<Packet> ();
   TcpHeader header;
   SequenceNumber32 s = m_nextTxSequence;
-  /* Control packets shouldn't be ECT marked */
-  uint8_t ECNbits = 0;
+  /* Control packets shouldn't be ECT marked, unless we're using DCTCP */
+  uint8_t ECNbits = (m_DCTCP && (m_EcnState & ECN_CONN)) ? Ipv4Header::ECT1 : 0;
   bool isAck = (flags == TcpHeader::ACK);
 
   /*
@@ -1705,11 +1730,22 @@ TcpSocketBase::SendEmptyPacket (uint16_t flags)
       flags |= (TcpHeader::ECE);
     }
 
-  if (((m_EcnState & (ECN_CONN | ECN_TX_ECHO)) == (uint32_t)(ECN_CONN | ECN_TX_ECHO)) &&
-        (flags == TcpHeader::ACK))
+  if ((m_EcnState & ECN_CONN) && (flags == TcpHeader::ACK))
     {
-      NS_LOG_INFO ("Sending ECN Echo.");
-      flags |= TcpHeader::ECE;
+      if (m_DCTCP && m_EcnTransition)
+        {
+          if (!(m_EcnState & ECN_TX_ECHO))
+            {
+              NS_LOG_INFO ("Sending ECN Echo.");
+              flags |= TcpHeader::ECE;
+            }
+          m_EcnTransition = false;
+        }
+      else if (m_EcnState & ECN_TX_ECHO)
+        {
+          NS_LOG_INFO ("Sending ECN Echo.");
+          flags |= TcpHeader::ECE;
+        }
     }
 
   header.SetFlags (flags);
@@ -2205,7 +2241,8 @@ TcpSocketBase::EstimateRtt (const TcpHeader& tcpHeader)
   // Use m_rtt for the estimation. Note, RTT of duplicated acknowledgement
   // (which should be ignored) is handled by m_rtt. Once timestamp option
   // is implemented, this function would be more elaborated.
-  Time nextRtt =  m_rtt->AckSeq (tcpHeader.GetAckNumber () );
+  bool isECNEcho = (tcpHeader.GetFlags() == (TcpHeader::ECE | TcpHeader::ACK));
+  Time nextRtt =  m_rtt->AckSeq (tcpHeader.GetAckNumber (), isECNEcho);
 
   //nextRtt will be zero for dup acks.  Don't want to update lastRtt in that case
   //but still needed to do list clearing that is done in AckSeq.

@@ -222,7 +222,9 @@ TcpTahoe::HalveCwnd(void)
       m_ssThreshLastChange = Simulator::Now ();
       m_ssThresh = std::max (static_cast<unsigned> (m_cWnd / 2), m_segmentSize * 2);  // Half ssthresh
     }
-  m_cWnd = std::max(m_cWnd.Get() / 2, m_segmentSize);
+  double alpha = m_DCTCP ? m_rtt->GetAlpha() : 1;
+  double tmp = m_cWnd.Get() * (1 - alpha / 2);
+  m_cWnd = std::max((uint32_t)tmp, m_segmentSize);
 }
 
 } // namespace ns3

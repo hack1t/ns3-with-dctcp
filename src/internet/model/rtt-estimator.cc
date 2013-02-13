@@ -88,16 +88,43 @@ RttEstimator::GetCurrentEstimate (void) const
   return m_currentEstimatedRtt;
 }
 
+double
+RttEstimator::GetAlpha (void) const
+{
+  return m_alpha;
+}
+
+double
+RttEstimator::GetG (void) const
+{
+  return m_g;
+}
+
+void
+RttEstimator::SetG (double g)
+{
+  m_g = g;
+}
 
 //RttHistory methods
-RttHistory::RttHistory (SequenceNumber32 s, uint32_t c, Time t)
-  : seq (s), count (c), time (t), retx (false)
+RttHistory::RttHistory (SequenceNumber32 s, uint32_t c, Time t, uint64_t marked, uint64_t unmarked)
+  : seq (s),
+    count (c),
+    time (t),
+    nonMarked (unmarked),
+    marked (marked),
+    retx (false)
 {
   NS_LOG_FUNCTION (this);
 }
 
 RttHistory::RttHistory (const RttHistory& h)
-  : seq (h.seq), count (h.count), time (h.time), retx (h.retx)
+  : seq (h.seq),
+    count (h.count),
+    time (h.time),
+    nonMarked (h.nonMarked),
+    marked (h.marked),
+    retx (h.retx)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -105,9 +132,14 @@ RttHistory::RttHistory (const RttHistory& h)
 // Base class methods
 
 RttEstimator::RttEstimator ()
-  : m_next (1), m_history (),
+  : m_next (1),
+    m_history (),
     m_nSamples (0),
-    m_multiplier (1)
+    m_multiplier (1),
+    m_g(0),
+    m_marked(0),
+    m_nonMarked(0),
+    m_alpha(0)
 {
   NS_LOG_FUNCTION (this);
   //note next=1 everywhere since first segment will have sequence 1
@@ -124,7 +156,8 @@ RttEstimator::RttEstimator (const RttEstimator& c)
     m_maxMultiplier (c.m_maxMultiplier),
     m_initialEstimatedRtt (c.m_initialEstimatedRtt),
     m_currentEstimatedRtt (c.m_currentEstimatedRtt), m_minRto (c.m_minRto),
-    m_nSamples (c.m_nSamples), m_multiplier (c.m_multiplier)
+    m_nSamples (c.m_nSamples), m_multiplier (c.m_multiplier), m_g(c.m_g),
+    m_marked(c.m_marked), m_nonMarked(c.m_nonMarked), m_alpha(c.m_alpha)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -140,7 +173,7 @@ void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
   // Note that a particular sequence has been sent
   if (seq == m_next)
     { // This is the next expected one, just log at end
-      m_history.push_back (RttHistory (seq, size, Simulator::Now () ));
+      m_history.push_back (RttHistory (seq, size, Simulator::Now (), m_marked, m_nonMarked));
       m_next = seq + SequenceNumber32 (size); // Update next expected
     }
   else
@@ -150,6 +183,8 @@ void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
           if ((seq >= i->seq) && (seq < (i->seq + SequenceNumber32 (i->count))))
             { // Found it
               i->retx = true;
+              i->marked = m_marked;
+              i->nonMarked = m_nonMarked;
               // One final test..be sure this re-tx does not extend "next"
               if ((seq + SequenceNumber32 (size)) > m_next)
                 {
@@ -162,26 +197,54 @@ void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
     }
 }
 
-Time RttEstimator::AckSeq (SequenceNumber32 ackSeq)
+Time RttEstimator::AckSeq (SequenceNumber32 ackSeq, bool markedFlag)
 {
   NS_LOG_FUNCTION (this << ackSeq);
   // An ack has been received, calculate rtt and log this measurement
   // Note we use a linear search (O(n)) for this since for the common
   // case the ack'ed packet will be at the head of the list
   Time m = Seconds (0.0);
-  if (m_history.size () == 0) return (m);    // No pending history, just exit
-  RttHistory& h = m_history.front ();
-  if (!h.retx && ackSeq >= (h.seq + SequenceNumber32 (h.count)))
-    { // Ok to use this sample
-      m = Simulator::Now () - h.time; // Elapsed time
-      Measurement (m);                // Log the measurement
-      ResetMultiplier ();             // Reset multiplier on valid measurement
+  if (m_history.size () == 0)
+    {
+      return (m);    // No pending history, just exit
     }
+
+  bool updatedRtt = false;
+  double delta_marked;
+  double delta_unmarked;
+  double f;
   // Now delete all ack history with seq <= ack
   while(m_history.size () > 0)
     {
       RttHistory& h = m_history.front ();
-      if ((h.seq + SequenceNumber32 (h.count)) > ackSeq) break;               // Done removing
+      if ((h.seq + SequenceNumber32 (h.count)) > ackSeq)
+        {
+          break; // Done removing
+        }
+
+      if (markedFlag)
+        {
+          m_marked++;
+        }
+      else
+        {
+          m_nonMarked++;
+        }
+
+      if (!updatedRtt)
+        { // Ok to use this sample
+          updatedRtt = true;
+          if (!h.retx)
+            {
+              m = Simulator::Now () - h.time; // Elapsed time
+              Measurement (m);                // Log the measurement
+              ResetMultiplier ();             // Reset multiplier on valid measurement
+            }
+        }
+      delta_marked = m_marked - h.marked;
+      delta_unmarked = m_nonMarked - h.nonMarked;
+      f = delta_marked ? delta_marked / (delta_unmarked + delta_marked) : 0;
+      m_alpha = (1 - m_g) * m_alpha + m_g * f;
       m_history.pop_front (); // Remove
     }
   return m;

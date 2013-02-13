@@ -244,6 +244,11 @@ protected:
   TracedValue<uint32_t> m_EcnState;   //< Current ECN State, represented as combination of EcnState values
   TracedValue<SequenceNumber32> m_EcnEchoSeq; //< Sequence number of the last received ECN echo
 
+  // DCTCP related params
+  bool                    m_DCTCP;      //< Socket DCTCP capability
+  double                  m_g;
+  bool                    m_EcnTransition; //< flag for determing should we start new Delayed Ack count
+
   // Window management
   uint32_t              m_segmentSize; //< Segment size
   uint16_t              m_maxWinSize;  //< Maximum window size to advertise
