@@ -262,7 +262,8 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
   m_countBytes += p->GetSize ();
 
   uint32_t dropType = DTYPE_NONE;
-  if (m_qAvg >= m_minTh && nQueued > 1)
+  uint32_t nQueuedNew = nQueued + (GetMode () == QUEUE_MODE_PACKETS ? 1 : p->GetSize());
+  if (m_qAvg >= m_minTh && nQueued > 1 && nQueuedNew <= m_queueLimit)
     {
       if ((!m_isGentle && m_qAvg >= m_maxTh) ||
           (m_isGentle && m_qAvg >= 2 * m_maxTh))
@@ -295,7 +296,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       m_old = 0;
     }
 
-  if (nQueued >= m_queueLimit)
+  if (nQueuedNew > m_queueLimit)
     {
       NS_LOG_DEBUG ("\t Dropping due to Queue Full " << nQueued);
       dropType = DTYPE_FORCED;
