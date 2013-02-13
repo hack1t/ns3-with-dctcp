@@ -139,14 +139,14 @@ public:
    *
    * \returns The encapsulation mode of this queue.
    */
-  RedQueue::QueueMode GetMode (void);
+  RedQueue::QueueMode GetMode (void) const;
 
   /*
    * \brief Get the current value of the queue in bytes or packets.
    *
    * \returns The queue size in bytes or packets.
    */
-  uint64_t GetQueueSize (void);
+  uint64_t GetQueueSize (void) const;
 
   /*
    * \brief Set the limit of the queue.
@@ -168,7 +168,7 @@ public:
    *
    * \returns The drop statistics.
    */
-  Stats GetStats ();
+  Stats GetStats () const;
 
  /**
   * Assign a fixed random variable stream number to the random variables
@@ -188,7 +188,7 @@ private:
   // ...
   void InitializeParams (void);
   // Compute the average queue size
-  double Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW);
+  double Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW) const;
   // Check if packet p needs to be dropped due to probability mark
   bool DropEarly (Ptr<Packet> p, uint64_t qSize);
   // Returns a probability using these function parameters for the DropEarly funtion

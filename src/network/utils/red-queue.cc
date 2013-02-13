@@ -175,7 +175,7 @@ RedQueue::SetMode (RedQueue::QueueMode mode)
 }
 
 RedQueue::QueueMode
-RedQueue::GetMode (void)
+RedQueue::GetMode (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_mode;
@@ -198,7 +198,7 @@ RedQueue::SetTh (double minTh, double maxTh)
 }
 
 RedQueue::Stats
-RedQueue::GetStats ()
+RedQueue::GetStats () const
 {
   NS_LOG_FUNCTION (this);
   return m_stats;
@@ -448,7 +448,7 @@ RedQueue::InitializeParams (void)
 
 // Compute the average queue size
 double
-RedQueue::Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW)
+RedQueue::Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW) const
 {
   NS_LOG_FUNCTION (this << nQueued << m << qAvg << qW);
   double newAve;
@@ -628,7 +628,7 @@ RedQueue::ModifyP (double p, uint64_t count, uint64_t countBytes,
 }
 
 uint64_t
-RedQueue::GetQueueSize (void)
+RedQueue::GetQueueSize (void) const
 {
   NS_LOG_FUNCTION (this);
   if (GetMode () == QUEUE_MODE_BYTES)
