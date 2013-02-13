@@ -105,6 +105,12 @@ TcpSocket::GetTypeId (void)
                    MakeTimeAccessor (&TcpSocket::GetPersistTimeout,
                                      &TcpSocket::SetPersistTimeout),
                    MakeTimeChecker ())
+    .AddAttribute ("ECN",
+                   "ECN capability of TCP socket",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&TcpSocket::GetEcnCap,
+                                        &TcpSocket::SetEcnCap),
+                   MakeBooleanChecker ())
   ;
   return tid;
 }

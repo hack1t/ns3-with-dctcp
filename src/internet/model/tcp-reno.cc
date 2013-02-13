@@ -51,7 +51,10 @@ TcpReno::GetTypeId (void)
   return tid;
 }
 
-TcpReno::TcpReno (void) : m_retxThresh (3), m_inFastRec (false)
+TcpReno::TcpReno (void)
+  : m_retxThresh (3),
+    m_inFastRec (false),
+    m_ssThreshLastChange (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -62,7 +65,8 @@ TcpReno::TcpReno (const TcpReno& sock)
     m_ssThresh (sock.m_ssThresh),
     m_initialCWnd (sock.m_initialCWnd),
     m_retxThresh (sock.m_retxThresh),
-    m_inFastRec (false)
+    m_inFastRec (false),
+    m_ssThreshLastChange (sock.m_ssThreshLastChange)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC ("Invoked the copy constructor");
@@ -149,6 +153,7 @@ TcpReno::DupAck (const TcpHeader& t, uint32_t count)
   if (count == m_retxThresh && !m_inFastRec)
     { // triple duplicate ack triggers fast retransmit (RFC2581, sec.3.2)
       m_ssThresh = std::max (2 * m_segmentSize, BytesInFlight () / 2);
+      m_ssThreshLastChange = Simulator::Now ();
       m_cWnd = m_ssThresh + 3 * m_segmentSize;
       m_inFastRec = true;
       NS_LOG_INFO ("Triple dupack. Reset cwnd to " << m_cWnd << ", ssthresh to " << m_ssThresh);
@@ -178,6 +183,7 @@ void TcpReno::Retransmit (void)
   // size and cwnd is set to 1*MSS, then the lost packet is retransmitted and
   // TCP back to slow start
   m_ssThresh = std::max (2 * m_segmentSize, BytesInFlight () / 2);
+  m_ssThreshLastChange = Simulator::Now ();
   m_cWnd = m_segmentSize;
   m_nextTxSequence = m_txBuffer.HeadSequence (); // Restart from highest Ack
   NS_LOG_INFO ("RTO. Reset cwnd to " << m_cWnd <<
@@ -197,6 +203,7 @@ void
 TcpReno::SetSSThresh (uint32_t threshold)
 {
   m_ssThresh = threshold;
+  m_ssThreshLastChange = Simulator::Now ();
 }
 
 uint32_t
@@ -227,6 +234,17 @@ TcpReno::InitializeCwnd (void)
    * m_segmentSize are set by the attribute system in ns3::TcpSocket.
    */
   m_cWnd = m_initialCWnd * m_segmentSize;
+}
+
+void
+TcpReno::HalveCwnd(void)
+{
+  if (m_ssThreshLastChange + m_rtt->GetCurrentEstimate () < Simulator::Now())
+    {
+      m_ssThreshLastChange = Simulator::Now ();
+      m_ssThresh = std::max (2 * m_segmentSize, BytesInFlight () / 2);
+    }
+  m_cWnd = std::max(m_cWnd.Get() / 2, m_segmentSize);
 }
 
 } // namespace ns3

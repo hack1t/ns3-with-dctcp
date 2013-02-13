@@ -125,6 +125,8 @@ protected:
   virtual Time     GetPersistTimeout (void) const;
   virtual bool     SetAllowBroadcast (bool allowBroadcast);
   virtual bool     GetAllowBroadcast (void) const;
+  virtual void     SetEcnCap (bool EcnCap);
+  virtual bool     GetEcnCap (void) const;
 
   // Helper functions: Connection set up
   int SetupCallback (void);        // Common part of the two Bind(), i.e. set callback and remembering local addr:port
@@ -140,10 +142,10 @@ protected:
   virtual void DoForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port, Ptr<Ipv4Interface> incomingInterface); //Get a pkt from L3
   virtual void DoForwardUp (Ptr<Packet> packet, Ipv6Header header, uint16_t port); // Ipv6 version
   void ForwardIcmp (Ipv4Address icmpSource, uint8_t icmpTtl, uint8_t icmpType, uint8_t icmpCode, uint32_t icmpInfo);
-  void ForwardIcmp6 (Ipv6Address icmpSource, uint8_t icmpTtl, uint8_t icmpType, uint8_t icmpCode, uint32_t icmpInfo);  
+  void ForwardIcmp6 (Ipv6Address icmpSource, uint8_t icmpTtl, uint8_t icmpType, uint8_t icmpCode, uint32_t icmpInfo);
   bool SendPendingData (bool withAck = false); // Send as much as the window allows
   uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck); // Send a data packet
-  void SendEmptyPacket (uint8_t flags); // Send a empty packet that carries a flag, e.g. ACK
+  void SendEmptyPacket (uint16_t flags); // Send a empty packet that carries a flag, e.g. ACK
   void SendRST (void); // Send reset and tear down this socket
   bool OutOfRange (SequenceNumber32 head, SequenceNumber32 tail) const; // Check if a sequence number range is within the rx window
 
@@ -189,6 +191,7 @@ protected:
   virtual void DoRetransmit (void); // Retransmit the oldest packet
   virtual void ReadOptions (const TcpHeader&); // Read option from incoming packets
   virtual void AddOptions (TcpHeader&); // Add option to outgoing packets
+  virtual void HalveCwnd(void) = 0;     // HalveCwnd when ECN CE flag is received
 
 protected:
   // Counters and events
@@ -235,6 +238,11 @@ protected:
   bool                     m_shutdownRecv;  //< Receive no longer allowed
   bool                     m_connected;     //< Connection established
   double                   m_msl;           //< Max segment lifetime
+
+  // ECN related attributes
+  bool                 m_ECN;         //< Socket ECN capability
+  TracedValue<uint32_t> m_EcnState;   //< Current ECN State, represented as combination of EcnState values
+  TracedValue<SequenceNumber32> m_EcnEchoSeq; //< Sequence number of the last received ECN echo
 
   // Window management
   uint32_t              m_segmentSize; //< Segment size

@@ -310,6 +310,7 @@ main (int argc, char *argv[])
 
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpReno"));
   // 42 = headers size
+  Config::SetDefault ("ns3::TcpSocket::ECN", BooleanValue (true));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1000 - 42));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
   GlobalValue::Bind ("ChecksumEnabled", BooleanValue (false));

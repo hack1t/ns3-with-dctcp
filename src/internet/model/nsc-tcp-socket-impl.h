@@ -130,6 +130,8 @@ private:
   virtual bool GetTcpNoDelay (void) const;
   virtual void SetPersistTimeout (Time timeout);
   virtual Time GetPersistTimeout (void) const;
+  virtual void SetEcnCap (bool EcnCap);
+  virtual bool GetEcnCap (void) const;
 
   enum Socket::SocketErrno GetNativeNs3Errno (int err) const;
   uint32_t m_delAckMaxCount;

@@ -825,6 +825,21 @@ NscTcpSocketImpl::GetPersistTimeout (void) const
   return m_persistTimeout;
 }
 
+void
+NscTcpSocketImpl::SetEcnCap (bool EcnCap)
+{
+  /*
+   * This isn't doing anything at the moment.
+   * ECN Capability should be set via sysctl interface.
+   */
+}
+
+bool
+NscTcpSocketImpl::GetEcnCap (void) const
+{
+  return false;
+}
+
 enum Socket::SocketErrno
 NscTcpSocketImpl::GetNativeNs3Errno (int error) const
 {

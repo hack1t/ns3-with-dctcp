@@ -8135,6 +8135,11 @@ def register_Ns3TcpSocket_methods(root_module, cls):
                    'bool', 
                    [], 
                    is_pure_virtual=True, is_const=True, visibility='private', is_virtual=True)
+    ## tcp-socket.h (module 'internet'): bool ns3::TcpSocket::GetEcnCap() const [member function]
+    cls.add_method('GetEcnCap',
+                   'bool',
+                   [],
+                   is_pure_virtual = True, is_const = True, visibility = 'private', is_virtual = True)
     ## tcp-socket.h (module 'internet'): void ns3::TcpSocket::SetConnCount(uint32_t count) [member function]
     cls.add_method('SetConnCount', 
                    'void', 
@@ -8190,6 +8195,11 @@ def register_Ns3TcpSocket_methods(root_module, cls):
                    'void', 
                    [param('bool', 'noDelay')], 
                    is_pure_virtual=True, visibility='private', is_virtual=True)
+    ## tcp-socket.h (module 'internet'): void ns3::TcpSocket::SetEcnCap(bool EcnCap) [member function]
+    cls.add_method('SetEcnCap',
+                   'void',
+                   [param('bool', 'EcnCap')],
+                   is_pure_virtual = True, visibility = 'private', is_virtual = True)
     return
 
 def register_Ns3TcpSocketFactory_methods(root_module, cls):
