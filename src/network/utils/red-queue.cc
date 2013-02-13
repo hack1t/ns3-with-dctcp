@@ -64,6 +64,7 @@
 #include "ns3/abort.h"
 #include "ns3/random-variable-stream.h"
 #include "red-queue.h"
+#include <cmath>
 
 NS_LOG_COMPONENT_DEFINE ("RedQueue");
 
@@ -112,6 +113,18 @@ TypeId RedQueue::GetTypeId (void)
                    DoubleValue (15),
                    MakeDoubleAccessor (&RedQueue::m_maxTh),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("TargetDelay",
+                   "Target Delay upon which we will set MinTh and MaxTh. "
+                   "MinTh and MaxTh must be set to 0, so we could automatically"
+                   "set them.",
+                   TimeValue(Time(0)),
+                   MakeTimeAccessor (&RedQueue::m_targetDelay),
+                   MakeTimeChecker())
+    .AddAttribute ("MinRTT",
+                   "Min RTT value to use when calculating m_qW. (100ms is default)",
+                   TimeValue(Time("100ms")),
+                   MakeTimeAccessor (&RedQueue::m_minRtt),
+                   MakeTimeChecker())
     .AddAttribute ("QueueLimit",
                    "Queue limit in bytes/packets",
                    UintegerValue (25),
@@ -439,7 +452,25 @@ RedQueue::InitializeParams (void)
   m_old = false;
   m_idle = true;
 
+  if (!m_minTh)
+    {
+      double targetQueue = m_targetDelay.GetSeconds() * m_ptc;
+      m_minTh = std::max(5.0, targetQueue / 2.0);
+
+      if (GetMode() == QUEUE_MODE_BYTES)
+        {
+          m_minTh *= m_meanPktSize * 8.0;
+        }
+    }
+
+  if (!m_maxTh)
+    {
+      m_maxTh = m_minTh + 3.0;
+    }
+
   double th_diff = (m_maxTh - m_minTh);
+  NS_ASSERT(th_diff >= 0);
+
   if (th_diff == 0)
     {
       th_diff = 1.0;
@@ -458,7 +489,7 @@ RedQueue::InitializeParams (void)
 /*
  * If m_qW=0, set it to a reasonable value of 1-exp(-1/C)
  * This corresponds to choosing m_qW to be of that value for
- * which the packet time constant -1/ln(1-m)qW) per default RTT
+ * which the packet time constant -1/ln(1-m_qW) per default RTT
  * of 100ms is an order of magnitude more than the link capacity, C.
  *
  * If m_qW=-1, then the queue weight is set to be a function of
@@ -476,9 +507,9 @@ RedQueue::InitializeParams (void)
     {
       double rtt = 3.0 * (m_linkDelay.GetSeconds () + 1.0 / m_ptc);
 
-      if (rtt < 0.1)
+      if (rtt < m_minRtt.GetSeconds())
         {
-          rtt = 0.1;
+          rtt = m_minRtt.GetSeconds();
         }
       m_qW = 1.0 - std::exp (-1.0 / (10 * rtt * m_ptc));
     }

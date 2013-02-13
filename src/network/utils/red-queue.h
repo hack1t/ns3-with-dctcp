@@ -223,6 +223,10 @@ private:
   double m_minTh;
   // Max avg length threshold (bytes), should be >= 2*minTh
   double m_maxTh;
+  // Targeted Delay for RED queue
+  Time m_targetDelay;
+  // Minimum RTT value to calculate m_qW, when m_qW is set to -1
+  Time m_minRtt;
   // Queue limit in bytes / packets
   uint64_t m_queueLimit;
   // Queue weight given to cur q size sample
