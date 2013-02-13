@@ -147,6 +147,54 @@ TypeId RedQueue::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&RedQueue::m_useCurrent),
                    MakeBooleanChecker ())
+     .AddAttribute ("Adaptive",
+                    "Use Adaptive RED mechanism",
+                    BooleanValue (false),
+                    MakeBooleanAccessor (&RedQueue::m_adaptiveRED),
+                    MakeBooleanChecker ())
+      .AddAttribute ("AdaptInterval",
+                     "Interval to recalculate maxP (0.5s is default)",
+                     TimeValue (Time("0.5s")),
+                     MakeTimeAccessor (&RedQueue::m_adaptInterval),
+                     MakeTimeChecker ())
+      .AddAttribute ("AdaptTargetMin",
+                     "Lower end of average queue length interval."
+                     "If set to 0 it will be calculated from minTh and maxTh.",
+                     DoubleValue (0),
+                     MakeDoubleAccessor (&RedQueue::m_adaptiveTargetMin),
+                     MakeDoubleChecker<double> ())
+       .AddAttribute ("AdaptTargetMax",
+                      "Higher end of average queue length interval."
+                      "If set to 0 it will be calculated from minTh and maxTh.",
+                      DoubleValue (0),
+                      MakeDoubleAccessor (&RedQueue::m_adaptiveTargetMax),
+                      MakeDoubleChecker<double> ())
+       .AddAttribute ("AdaptAlpha",
+                      "Alpha parameter for Adaptive RED."
+                      "If set to 0 it will be calculated on every adaptInterval.",
+                      DoubleValue (0),
+                      MakeDoubleAccessor (&RedQueue::m_adaptiveAlpha),
+                      MakeDoubleChecker<double> ())
+       .AddAttribute ("AdaptAlphaMax",
+                      "Max value for alpha parameter for Adaptive RED (0.1 is default)",
+                      DoubleValue (0.1),
+                      MakeDoubleAccessor (&RedQueue::m_adaptiveAlphaMax),
+                      MakeDoubleChecker<double> ())
+       .AddAttribute ("AdaptBeta",
+                      "Beta parameter for Adaptive RED (0.9 is default)",
+                      DoubleValue (0.9),
+                      MakeDoubleAccessor (&RedQueue::m_adaptiveBeta),
+                      MakeDoubleChecker<double> ())
+      .AddAttribute ("AdaptMaxMaxP",
+                     "Max value for maxP (0.5 is default)",
+                     DoubleValue (0.5),
+                     MakeDoubleAccessor (&RedQueue::m_maxMaxP),
+                     MakeDoubleChecker<double> ())
+      .AddAttribute ("AdaptMinMaxP",
+                     "Min value for maxP (0.01 is default)",
+                     DoubleValue (0.01),
+                     MakeDoubleAccessor (&RedQueue::m_minMaxP),
+                     MakeDoubleChecker<double> ())
   ;
 
   return tid;
@@ -156,7 +204,8 @@ RedQueue::RedQueue () :
   Queue (),
   m_packets (),
   m_bytesInQueue (0),
-  m_hasRedStarted (false)
+  m_hasRedStarted (false),
+  m_calculateAlpha(true)
 {
   NS_LOG_FUNCTION (this);
   m_uv = CreateObject<UniformRandomVariable> ();
@@ -164,6 +213,7 @@ RedQueue::RedQueue () :
 
 RedQueue::~RedQueue ()
 {
+  m_adapt.Cancel();
   NS_LOG_FUNCTION (this);
 }
 
@@ -237,28 +287,8 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       nQueued = m_packets.size ();
     }
 
-  // simulate number of packets arrival during idle period
-  uint64_t m = 0;
-
-  if (m_idle)
-    {
-      NS_LOG_DEBUG ("RED Queue is idle.");
-      Time now = Simulator::Now ();
-
-      if (m_cautious == 3)
-        {
-          double ptc = m_ptc * m_meanPktSize / m_idlePktSize;
-          m = uint64_t (ptc * (now - m_idleTime).GetSeconds ());
-        }
-      else
-        {
-          m = uint64_t (m_ptc * (now - m_idleTime).GetSeconds ());
-        }
-
-      m_idle = false;
-    }
-
-  m_qAvg = Estimator (nQueued, m + 1, m_qAvg, m_qW);
+  Estimator (nQueued);
+  m_idle = false;
 
   NS_LOG_DEBUG ("\t bytesInQueue  " << m_bytesInQueue << "\tQavg " << m_qAvg);
   NS_LOG_DEBUG ("\t packetsInQueue  " << m_packets.size () << "\tQavg " << m_qAvg);
@@ -361,6 +391,28 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
   return true;
 }
 
+void
+RedQueue::AdaptMaxP()
+{
+  /* Estimate queue size, before calculating maxP */
+  Estimator(GetQueueSize());
+
+  if (m_calculateAlpha)
+    {
+      m_adaptiveAlpha = std::min(m_adaptiveAlphaMax, m_curMaxP / 4.0);
+    }
+
+  if (m_qAvg > m_adaptiveTargetMax && m_curMaxP <= m_maxMaxP)
+    {
+      m_curMaxP += m_adaptiveAlpha;
+    }
+  else if (m_qAvg < m_adaptiveTargetMin && m_curMaxP >= m_minMaxP)
+    {
+      m_curMaxP *= m_adaptiveBeta;
+    }
+  m_adapt = Simulator::Schedule (m_adaptInterval, &RedQueue::AdaptMaxP, this);
+}
+
 /*
  * Note: if the link bandwidth changes in the course of the
  * simulation, the bandwidth-dependent RED parameters do not change.
@@ -435,7 +487,30 @@ RedQueue::InitializeParams (void)
       m_qW = 1.0 - std::exp (-10.0 / m_ptc);
     }
 
-  // TODO: implement adaptive RED
+  if (m_adaptiveRED)
+    {
+      if (m_adaptiveTargetMin == 0)
+        {
+          NS_ASSERT(m_adaptiveTargetMax == 0);
+          m_adaptiveTargetMin = m_minTh + 0.4 * (m_maxTh - m_minTh);
+        }
+      else
+        {
+          NS_ASSERT(m_adaptiveTargetMin <= m_adaptiveTargetMax &&
+                  m_adaptiveTargetMax < (double)m_queueLimit);
+        }
+
+      if (m_adaptiveTargetMax == 0)
+        {
+          m_adaptiveTargetMax = m_minTh + 0.6 * (m_maxTh - m_minTh);
+        }
+
+      if (m_adaptiveAlpha)
+        {
+          m_calculateAlpha = false;
+        }
+      m_adapt = Simulator::Schedule (m_adaptInterval, &RedQueue::AdaptMaxP, this);
+    }
 
   NS_LOG_DEBUG ("\tm_delay " << m_linkDelay.GetSeconds () << "; m_isWait "
                              << m_isWait << "; m_qW " << m_qW << "; m_ptc " << m_ptc
@@ -447,29 +522,44 @@ RedQueue::InitializeParams (void)
 }
 
 // Compute the average queue size
-double
-RedQueue::Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW) const
+void
+RedQueue::Estimator (uint64_t nQueued)
 {
-  NS_LOG_FUNCTION (this << nQueued << m << qAvg << qW);
-  double newAve;
+  NS_LOG_FUNCTION (this << nQueued);
+
+  // simulate number of packets arrival during idle period
+  uint64_t m = 1;
+
+  if (m_idle)
+    {
+      NS_LOG_DEBUG ("RED Queue is idle.");
+      Time now = Simulator::Now ();
+
+      if (m_cautious == 3)
+        {
+          double ptc = m_ptc * m_meanPktSize / m_idlePktSize;
+          m = uint64_t (ptc * (now - m_idleTime).GetSeconds ()) + 1;
+        }
+      else
+        {
+          m = uint64_t (m_ptc * (now - m_idleTime).GetSeconds ()) + 1;
+        }
+      m_idleTime = now;
+    }
+
   if (!m_useCurrent)
     {
-      newAve = qAvg;
       while (--m >= 1)
         {
-          newAve *= 1.0 - qW;
+          m_qAvg *= 1.0 - m_qW;
         }
-      newAve *= 1.0 - qW;
-      newAve += qW * nQueued;
+      m_qAvg *= 1.0 - m_qW;
+      m_qAvg += m_qW * nQueued;
     }
   else
     {
-      newAve = nQueued;
+      m_qAvg = nQueued;
     }
-
-  // TODO: implement adaptive RED
-
-  return newAve;
 }
 
 // Check if packet p needs to be dropped due to probability mark

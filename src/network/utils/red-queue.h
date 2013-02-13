@@ -68,6 +68,7 @@
 #include "ns3/boolean.h"
 #include "ns3/data-rate.h"
 #include "ns3/nstime.h"
+#include "ns3/event-id.h"
 
 namespace ns3 {
 
@@ -185,10 +186,13 @@ private:
   virtual Ptr<Packet> DoDequeue (void);
   virtual Ptr<const Packet> DoPeek (void) const;
 
+  // Estimates Average Queue Size and adapts maxP param.
+  // This functions is call on every m_adaptInterval
+  void AdaptMaxP(void);
   // ...
   void InitializeParams (void);
   // Compute the average queue size
-  double Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW) const;
+  void Estimator (uint64_t nQueued);
   // Check if packet p needs to be dropped due to probability mark
   bool DropEarly (Ptr<Packet> p, uint64_t qSize);
   // Returns a probability using these function parameters for the DropEarly funtion
@@ -269,6 +273,22 @@ private:
   uint32_t m_cautious;
   // Start of current idle period
   Time m_idleTime;
+  // Adaptive RED params
+  bool m_adaptiveRED;
+  EventId m_adapt;
+  Time m_adaptInterval;
+
+  double m_adaptiveTargetMin;
+  double m_adaptiveTargetMax;
+
+  bool m_calculateAlpha;
+  double m_adaptiveAlpha;
+  double m_adaptiveAlphaMax;
+
+  double m_adaptiveBeta;
+
+  double m_minMaxP;
+  double m_maxMaxP;
 
   Ptr<UniformRandomVariable> m_uv;
 };
