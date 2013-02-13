@@ -231,6 +231,8 @@ private:
   DataRate m_linkBandwidth;
   // Link delay
   Time m_linkDelay;
+  // Flag to see which queue length should be used (average or current)
+  bool m_useCurrent;
 
   // ** Variables maintained by RED
   // Prob. of packet drop before "count"

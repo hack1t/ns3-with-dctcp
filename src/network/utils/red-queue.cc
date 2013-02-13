@@ -142,6 +142,11 @@ TypeId RedQueue::GetTypeId (void)
                    TimeValue (MilliSeconds (20)),
                    MakeTimeAccessor (&RedQueue::m_linkDelay),
                    MakeTimeChecker ())
+    .AddAttribute ("UseCurrent",
+                   "Use current queue limit instead of average queue length (needed for DCTCP)",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&RedQueue::m_useCurrent),
+                   MakeBooleanChecker ())
   ;
 
   return tid;
@@ -447,14 +452,20 @@ RedQueue::Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW)
 {
   NS_LOG_FUNCTION (this << nQueued << m << qAvg << qW);
   double newAve;
-
-  newAve = qAvg;
-  while (--m >= 1)
+  if (!m_useCurrent)
     {
+      newAve = qAvg;
+      while (--m >= 1)
+        {
+          newAve *= 1.0 - qW;
+        }
       newAve *= 1.0 - qW;
+      newAve += qW * nQueued;
     }
-  newAve *= 1.0 - qW;
-  newAve += qW * nQueued;
+  else
+    {
+      newAve = nQueued;
+    }
 
   // TODO: implement adaptive RED
 
