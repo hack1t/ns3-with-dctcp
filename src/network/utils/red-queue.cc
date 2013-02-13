@@ -116,7 +116,7 @@ TypeId RedQueue::GetTypeId (void)
                    "Queue limit in bytes/packets",
                    UintegerValue (25),
                    MakeUintegerAccessor (&RedQueue::m_queueLimit),
-                   MakeUintegerChecker<uint32_t> ())
+                   MakeUintegerChecker<uint64_t> ())
     .AddAttribute ("QW",
                    "Queue weight related to the exponential weighted moving average (EWMA)",
                    DoubleValue (0.002),
@@ -177,7 +177,7 @@ RedQueue::GetMode (void)
 }
 
 void
-RedQueue::SetQueueLimit (uint32_t lim)
+RedQueue::SetQueueLimit (uint64_t lim)
 {
   NS_LOG_FUNCTION (this <<lim);
   m_queueLimit = lim;
@@ -219,7 +219,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       m_hasRedStarted = true;
     }
 
-  uint32_t nQueued = 0;
+  uint64_t nQueued = 0;
 
   if (GetMode () == QUEUE_MODE_BYTES)
     {
@@ -233,9 +233,9 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
     }
 
   // simulate number of packets arrival during idle period
-  uint32_t m = 0;
+  uint64_t m = 0;
 
-  if (m_idle == 1)
+  if (m_idle)
     {
       NS_LOG_DEBUG ("RED Queue is idle.");
       Time now = Simulator::Now ();
@@ -243,14 +243,14 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       if (m_cautious == 3)
         {
           double ptc = m_ptc * m_meanPktSize / m_idlePktSize;
-          m = uint32_t (ptc * (now - m_idleTime).GetSeconds ());
+          m = uint64_t (ptc * (now - m_idleTime).GetSeconds ());
         }
       else
         {
-          m = uint32_t (m_ptc * (now - m_idleTime).GetSeconds ());
+          m = uint64_t (m_ptc * (now - m_idleTime).GetSeconds ());
         }
 
-      m_idle = 0;
+      m_idle = false;
     }
 
   m_qAvg = Estimator (nQueued, m + 1, m_qAvg, m_qW);
@@ -262,7 +262,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
   m_countBytes += p->GetSize ();
 
   uint32_t dropType = DTYPE_NONE;
-  uint32_t nQueuedNew = nQueued + (GetMode () == QUEUE_MODE_PACKETS ? 1 : p->GetSize());
+  uint64_t nQueuedNew = nQueued + (GetMode () == QUEUE_MODE_PACKETS ? 1 : p->GetSize());
   if (m_qAvg >= m_minTh && nQueued > 1 && nQueuedNew <= m_queueLimit)
     {
       if ((!m_isGentle && m_qAvg >= m_maxTh) ||
@@ -271,7 +271,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
           NS_LOG_DEBUG ("adding DROP UNFORCED HARD MARK");
           dropType = DTYPE_UNFORCED_HARD;
         }
-      else if (m_old == 0)
+      else if (!m_old)
         {
           /*
            * The average queue size has just crossed the
@@ -281,7 +281,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
            */
           m_count = 1;
           m_countBytes = p->GetSize ();
-          m_old = 1;
+          m_old = true;
         }
       else if (DropEarly (p, nQueued))
         {
@@ -293,7 +293,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
     {
       // No packets are being dropped
       m_vProb = 0.0;
-      m_old = 0;
+      m_old = false;
     }
 
   if (nQueuedNew > m_queueLimit)
@@ -379,8 +379,8 @@ RedQueue::InitializeParams (void)
   m_qAvg = 0.0;
   m_count = 0;
   m_countBytes = 0;
-  m_old = 0;
-  m_idle = 1;
+  m_old = false;
+  m_idle = true;
 
   double th_diff = (m_maxTh - m_minTh);
   if (th_diff == 0)
@@ -443,7 +443,7 @@ RedQueue::InitializeParams (void)
 
 // Compute the average queue size
 double
-RedQueue::Estimator (uint32_t nQueued, uint32_t m, double qAvg, double qW)
+RedQueue::Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW)
 {
   NS_LOG_FUNCTION (this << nQueued << m << qAvg << qW);
   double newAve;
@@ -462,8 +462,8 @@ RedQueue::Estimator (uint32_t nQueued, uint32_t m, double qAvg, double qW)
 }
 
 // Check if packet p needs to be dropped due to probability mark
-uint32_t
-RedQueue::DropEarly (Ptr<Packet> p, uint32_t qSize)
+bool
+RedQueue::DropEarly (Ptr<Packet> p, uint64_t qSize)
 {
   NS_LOG_FUNCTION (this << p << qSize);
   m_vProb1 = CalculatePNew (m_qAvg, m_maxTh, m_isGentle, m_vA, m_vB, m_vC, m_vD, m_curMaxP);
@@ -483,7 +483,7 @@ RedQueue::DropEarly (Ptr<Packet> p, uint32_t qSize)
       if ((double) qSize < fraction * m_qAvg)
         {
           // Queue could have been empty for 0.05 seconds
-          return 0;
+          return false;
         }
     }
 
@@ -516,10 +516,10 @@ RedQueue::DropEarly (Ptr<Packet> p, uint32_t qSize)
       m_countBytes = 0;
       // TODO: Implement set bit to mark
 
-      return 1; // drop
+      return true; // drop
     }
 
-  return 0; // no drop/mark
+  return false; // no drop/mark
 }
 
 // Returns a probability using these function parameters for the DropEarly funtion
@@ -565,7 +565,7 @@ RedQueue::CalculatePNew (double qAvg, double maxTh, bool isGentle, double vA,
 
 // Returns a probability using these function parameters for the DropEarly funtion
 double
-RedQueue::ModifyP (double p, uint32_t count, uint32_t countBytes,
+RedQueue::ModifyP (double p, uint64_t count, uint64_t countBytes,
                    uint32_t meanPktSize, bool isWait, uint32_t size)
 {
   NS_LOG_FUNCTION (this << p << count << countBytes << meanPktSize << isWait << size);
@@ -616,7 +616,7 @@ RedQueue::ModifyP (double p, uint32_t count, uint32_t countBytes,
   return p;
 }
 
-uint32_t
+uint64_t
 RedQueue::GetQueueSize (void)
 {
   NS_LOG_FUNCTION (this);
@@ -642,14 +642,14 @@ RedQueue::DoDequeue (void)
   if (m_packets.empty ())
     {
       NS_LOG_LOGIC ("Queue empty");
-      m_idle = 1;
+      m_idle = true;
       m_idleTime = Simulator::Now ();
 
       return 0;
     }
   else
     {
-      m_idle = 0;
+      m_idle = false;
       Ptr<Packet> p = m_packets.front ();
       m_packets.pop_front ();
       m_bytesInQueue -= p->GetSize ();

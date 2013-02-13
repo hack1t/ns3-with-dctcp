@@ -104,13 +104,13 @@ public:
   typedef struct
   {
     // Marked packets due to congestion
-    uint32_t marked;
+    uint64_t marked;
     // Early probability drops
-    uint32_t unforcedDrop;
+    uint64_t unforcedDrop;
     // Forced drops, qavg > max threshold
-    uint32_t forcedDrop;
+    uint64_t forcedDrop;
     // Drops due to queue limits
-    uint32_t qLimDrop;
+    uint64_t qLimDrop;
   } Stats;
 
   /*
@@ -146,14 +146,14 @@ public:
    *
    * \returns The queue size in bytes or packets.
    */
-  uint32_t GetQueueSize (void);
+  uint64_t GetQueueSize (void);
 
   /*
    * \brief Set the limit of the queue.
    *
    * \param lim The limit in bytes or packets.
    */
-  void SetQueueLimit (uint32_t lim);
+  void SetQueueLimit (uint64_t lim);
 
   /*
    * \brief Set the thresh limits of RED.
@@ -188,19 +188,19 @@ private:
   // ...
   void InitializeParams (void);
   // Compute the average queue size
-  double Estimator (uint32_t nQueued, uint32_t m, double qAvg, double qW);
+  double Estimator (uint64_t nQueued, uint64_t m, double qAvg, double qW);
   // Check if packet p needs to be dropped due to probability mark
-  uint32_t DropEarly (Ptr<Packet> p, uint32_t qSize);
+  bool DropEarly (Ptr<Packet> p, uint64_t qSize);
   // Returns a probability using these function parameters for the DropEarly funtion
   double CalculatePNew (double qAvg, double maxTh, bool gentle, double vA,
                         double vB, double vC, double vD, double maxP);
   // Returns a probability using these function parameters for the DropEarly funtion
-  double ModifyP (double p, uint32_t count, uint32_t countBytes,
+  double ModifyP (double p, uint64_t count, uint64_t countBytes,
                   uint32_t meanPktSize, bool wait, uint32_t size);
 
   std::list<Ptr<Packet> > m_packets;
 
-  uint32_t m_bytesInQueue;
+  uint64_t m_bytesInQueue;
   bool m_hasRedStarted;
   Stats m_stats;
 
@@ -220,7 +220,7 @@ private:
   // Max avg length threshold (bytes), should be >= 2*minTh
   double m_maxTh;
   // Queue limit in bytes / packets
-  uint32_t m_queueLimit;
+  uint64_t m_queueLimit;
   // Queue weight given to cur q size sample
   double m_qW;
   // The max probability of dropping a packet
@@ -247,17 +247,17 @@ private:
   // Prob. of packet drop
   double m_vProb;
   // # of bytes since last drop
-  uint32_t m_countBytes;
+  uint64_t m_countBytes;
   // 0 when average queue first exceeds thresh
-  uint32_t m_old;
+  bool m_old;
   // 0/1 idle status
-  uint32_t m_idle;
+  bool m_idle;
   // packet time constant in packets/second
   double m_ptc;
   // Average queue length
   double m_qAvg;
   // number of packets since last random number generation
-  uint32_t m_count;
+  uint64_t m_count;
   /*
    * 0 for default RED
    * 1 experimental (see red-queue.cc)
