@@ -17,7 +17,7 @@
  */
 
 // The queue base class does not have any limit based on the number
-// of packets or number of bytes. It is, conceptually, infinite 
+// of packets or number of bytes. It is, conceptually, infinite
 // by default. Only subclasses define limitations.
 // The base class implements tracing and basic statistics calculations.
 
@@ -39,7 +39,7 @@ namespace ns3 {
 /**
  * \ingroup queue
  * \brief Abstract base class for packet Queues
- * 
+ *
  * This class defines the base APIs for packet queues in the ns-3 system
  */
 class Queue : public Object
@@ -86,26 +86,26 @@ public:
 
   /**
    * \return The total number of bytes received by this Queue since the
-   * simulation began, or since ResetStatistics was called, according to 
+   * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
-   * 
+   *
    */
   uint32_t GetTotalReceivedBytes (void) const;
   /**
    * \return The total number of packets received by this Queue since the
-   * simulation began, or since ResetStatistics was called, according to 
+   * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
    */
   uint32_t GetTotalReceivedPackets (void) const;
   /**
    * \return The total number of bytes dropped by this Queue since the
-   * simulation began, or since ResetStatistics was called, according to 
+   * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
    */
   uint32_t GetTotalDroppedBytes (void) const;
   /**
    * \return The total number of bytes dropped by this Queue since the
-   * simulation began, or since ResetStatistics was called, according to 
+   * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
    */
   uint32_t GetTotalDroppedPackets (void) const;
