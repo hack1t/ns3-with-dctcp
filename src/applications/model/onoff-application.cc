@@ -262,8 +262,10 @@ void OnOffApplication::SendPacket ()
   NS_ASSERT (m_sendEvent.IsExpired ());
   Ptr<Packet> packet = Create<Packet> (m_pktSize);
   m_txTrace (packet);
-  m_socket->Send (packet);
-  m_totBytes += m_pktSize;
+  if (m_socket->Send (packet) > 0)
+    {
+      m_totBytes += m_pktSize;
+    }
   if (InetSocketAddress::IsMatchingType (m_peer))
     {
       NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds ()
