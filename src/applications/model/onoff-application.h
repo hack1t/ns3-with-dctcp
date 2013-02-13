@@ -99,7 +99,7 @@ public:
    * is sent again, even in on state. The value zero means that there is no
    * limit.
    */
-  void SetMaxBytes (uint32_t maxBytes);
+  void SetMaxBytes (uint64_t maxBytes);
 
   /**
    * \return pointer to associated socket
@@ -146,10 +146,10 @@ private:
   Ptr<RandomVariableStream>  m_offTime;      // rng for Off Time
   DataRate        m_cbrRate;      // Rate that data is generated
   uint32_t        m_pktSize;      // Size of packets
-  uint32_t        m_residualBits; // Number of generated, but not sent, bits
+  uint64_t        m_residualBits; // Number of generated, but not sent, bits
   Time            m_lastStartTime; // Time last packet sent
-  uint32_t        m_maxBytes;     // Limit total number of bytes sent
-  uint32_t        m_totBytes;     // Total bytes sent so far
+  uint64_t        m_maxBytes;     // Limit total number of bytes sent
+  uint64_t        m_totBytes;     // Total bytes sent so far
   EventId         m_startStopEvent;     // Event id for next start or stop event
   EventId         m_sendEvent;    // Eventid of pending "send packet" event
   bool            m_sending;      // True if currently in sending state

@@ -109,7 +109,7 @@ OnOffApplication::~OnOffApplication()
 }
 
 void
-OnOffApplication::SetMaxBytes (uint32_t maxBytes)
+OnOffApplication::SetMaxBytes (uint64_t maxBytes)
 {
   NS_LOG_FUNCTION (this << maxBytes);
   m_maxBytes = maxBytes;
@@ -222,7 +222,7 @@ void OnOffApplication::ScheduleNextTx ()
 
   if (m_maxBytes == 0 || m_totBytes < m_maxBytes)
     {
-      uint32_t bits = m_pktSize * 8 - m_residualBits;
+      uint64_t bits = m_pktSize * 8 - m_residualBits;
       NS_LOG_LOGIC ("bits = " << bits);
       Time nextTime (Seconds (bits /
                               static_cast<double>(m_cbrRate.GetBitRate ()))); // Time till next packet
