@@ -452,6 +452,7 @@ main (int argc, char *argv[])
       Ptr<PointToPointNetDevice> nd = StaticCast<PointToPointNetDevice> (devn2n3.Get (0));
       RedQueue::Stats st = StaticCast<RedQueue> (nd->GetQueue ())->GetStats ();
       std::cout << "*** RED stats from Node 2 queue ***" << std::endl;
+      std::cout << "\t " << st.marked << " marked packet due prob mark" << std::endl;
       std::cout << "\t " << st.unforcedDrop << " drops due prob mark" << std::endl;
       std::cout << "\t " << st.forcedDrop << " drops due hard mark" << std::endl;
       std::cout << "\t " << st.qLimDrop << " drops due queue full" << std::endl;
@@ -459,6 +460,7 @@ main (int argc, char *argv[])
       nd = StaticCast<PointToPointNetDevice> (devn2n3.Get (1));
       st = StaticCast<RedQueue> (nd->GetQueue ())->GetStats ();
       std::cout << "*** RED stats from Node 3 queue ***" << std::endl;
+      std::cout << "\t " << st.marked << " marked packet due prob mark" << std::endl;
       std::cout << "\t " << st.unforcedDrop << " drops due prob mark" << std::endl;
       std::cout << "\t " << st.forcedDrop << " drops due hard mark" << std::endl;
       std::cout << "\t " << st.qLimDrop << " drops due queue full" << std::endl;

@@ -103,6 +103,8 @@ public:
    */
   typedef struct
   {
+    // Marked packets due to congestion
+    uint32_t marked;
     // Early probability drops
     uint32_t unforcedDrop;
     // Forced drops, qavg > max threshold
@@ -117,9 +119,10 @@ public:
    */
   enum
   {
-    DTYPE_NONE,        // Ok, no drop
-    DTYPE_FORCED,      // A "forced" drop
-    DTYPE_UNFORCED,    // An "unforced" (random) drop
+    DTYPE_NONE,             // Ok, no drop
+    DTYPE_FORCED,           // A "forced" drop
+    DTYPE_UNFORCED_SOFT,    // An "unforced" (random) drop due to MinTh
+    DTYPE_UNFORCED_HARD,    // An "unforced" (random) drop due to MaxTh
   };
 
   /*

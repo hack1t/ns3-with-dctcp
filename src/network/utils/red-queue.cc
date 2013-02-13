@@ -267,8 +267,8 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       if ((!m_isGentle && m_qAvg >= m_maxTh) ||
           (m_isGentle && m_qAvg >= 2 * m_maxTh))
         {
-          NS_LOG_DEBUG ("adding DROP FORCED MARK");
-          dropType = DTYPE_FORCED;
+          NS_LOG_DEBUG ("adding DROP UNFORCED HARD MARK");
+          dropType = DTYPE_UNFORCED_HARD;
         }
       else if (m_old == 0)
         {
@@ -285,7 +285,7 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       else if (DropEarly (p, nQueued))
         {
           NS_LOG_LOGIC ("DropEarly returns 1");
-          dropType = DTYPE_UNFORCED;
+          dropType = DTYPE_UNFORCED_SOFT;
         }
     }
   else
@@ -302,25 +302,49 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       m_stats.qLimDrop++;
     }
 
-  if (dropType == DTYPE_UNFORCED)
+  /* Try to mark ECN bits first */
+  if (dropType == DTYPE_UNFORCED_SOFT ||
+        dropType == DTYPE_UNFORCED_HARD)
     {
-      NS_LOG_DEBUG ("\t Dropping due to Prob Mark " << m_qAvg);
-      m_stats.unforcedDrop++;
-      Drop (p);
-      return false;
-    }
-  else if (dropType == DTYPE_FORCED)
-    {
-      NS_LOG_DEBUG ("\t Dropping due to Hard Mark " << m_qAvg);
-      m_stats.forcedDrop++;
-      Drop (p);
-      if (m_isNs1Compat)
+      Ptr<Header> header;
+      uint32_t offset = 0;
+      offset = p->GetIpHeader (header);
+      if (!!header && header->IsCongestionAware())
         {
-          m_count = 0;
-          m_countBytes = 0;
+          header->SetCongested();
+          p->ReplaceHeader(header, offset);
+          m_stats.marked++;
+          /* We marked ECN bits! Packet shouldn't be droped */
+          dropType = DTYPE_NONE;
         }
-      return false;
     }
+
+  switch (dropType)
+    {
+      case DTYPE_UNFORCED_SOFT:
+        {
+          NS_LOG_DEBUG ("\t Dropping due to Prob Mark " << m_qAvg);
+          m_stats.unforcedDrop++;
+          Drop (p);
+          return false;
+        }
+      case DTYPE_UNFORCED_HARD:
+        NS_LOG_DEBUG ("\t Dropping due to Hard Mark " << m_qAvg);
+        m_stats.forcedDrop++;
+        /* FALL THROUGH */
+      case DTYPE_FORCED:
+        {
+          Drop (p);
+          if (m_isNs1Compat)
+            {
+              m_count = 0;
+              m_countBytes = 0;
+            }
+          return false;
+        }
+      default:
+        break;
+    };
 
   m_bytesInQueue += p->GetSize ();
   m_packets.push_back (p);
@@ -344,6 +368,7 @@ RedQueue::InitializeParams (void)
 
   NS_ASSERT (m_minTh <= m_maxTh);
   m_stats.forcedDrop = 0;
+  m_stats.marked = 0;
   m_stats.unforcedDrop = 0;
   m_stats.qLimDrop = 0;
 

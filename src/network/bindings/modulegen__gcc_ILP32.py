@@ -193,7 +193,7 @@ def register_types(module):
     ## red-queue.h (module 'network'): ns3::RedQueue [class]
     module.add_class('RedQueue', parent=root_module['ns3::Queue'])
     ## red-queue.h (module 'network'): ns3::RedQueue [enumeration]
-    module.add_enum('', ['DTYPE_NONE', 'DTYPE_FORCED', 'DTYPE_UNFORCED'], outer_class=root_module['ns3::RedQueue'])
+    module.add_enum('', ['DTYPE_NONE', 'DTYPE_FORCED', 'DTYPE_UNFORCED_SOFT', 'DTYPE_UNFORCED_HARD'], outer_class = root_module['ns3::RedQueue'])
     ## red-queue.h (module 'network'): ns3::RedQueue::Stats [struct]
     module.add_class('Stats', outer_class=root_module['ns3::RedQueue'])
     ## random-variable-stream.h (module 'core'): ns3::SequentialRandomVariable [class]
