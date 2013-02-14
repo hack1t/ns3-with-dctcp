@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include "ns3/header.h"
+#include "ns3/tcp-option.h"
 #include "ns3/buffer.h"
 #include "ns3/tcp-socket-factory.h"
 #include "ns3/ipv4-address.h"
@@ -118,6 +119,14 @@ public:
    * \return the urgent pointer for this TcpHeader
    */
   uint16_t GetUrgentPointer () const;
+  /**
+   * \return Whether the header contains a specific kind of option
+   */
+  Ptr<TcpOption> GetOption (TcpOption::Kind kind) const;
+  /**
+   * \brief Add an option to the TCP header
+   */
+  void AppendOption (Ptr<TcpOption> option);
 
   /**
    * \param source the ip source to use in the underlying
@@ -174,6 +183,8 @@ private:
   uint16_t m_initialChecksum;
   bool m_calcChecksum;
   bool m_goodChecksum;
+
+  std::list<Ptr<TcpOption> > m_options;
 };
 
 } // namespace ns3

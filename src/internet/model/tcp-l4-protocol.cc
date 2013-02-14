@@ -612,7 +612,6 @@ TcpL4Protocol::SendPacket (Ptr<Packet> packet, const TcpHeader &outgoing,
   // XXX outgoingHeader cannot be logged
 
   TcpHeader outgoingHeader = outgoing;
-  outgoingHeader.SetLength (5); //header length in units of 32bit words
   /* outgoingHeader.SetUrgentPointer (0); //XXX */
   if(Node::ChecksumEnabled ())
     {
@@ -664,7 +663,6 @@ TcpL4Protocol::SendPacket (Ptr<Packet> packet, const TcpHeader &outgoing,
       return (SendPacket (packet, outgoing, saddr.GetIpv4MappedAddress(), daddr.GetIpv4MappedAddress(), tClass, oif));
     }
   TcpHeader outgoingHeader = outgoing;
-  outgoingHeader.SetLength (5); //header length in units of 32bit words
   /* outgoingHeader.SetUrgentPointer (0); //XXX */
   if(Node::ChecksumEnabled ())
     {

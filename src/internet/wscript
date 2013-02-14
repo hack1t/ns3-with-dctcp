@@ -139,6 +139,14 @@ def build(bld):
         'model/tcp-newreno.cc',
         'model/tcp-rx-buffer.cc',
         'model/tcp-tx-buffer.cc',
+        'model/tcp-option.cc',
+        'model/tcp-option-end.cc',
+        'model/tcp-option-no-op.cc',
+        'model/tcp-option-mss.cc',
+        'model/tcp-option-winscale.cc',
+        'model/tcp-option-sack-permitted.cc',
+        'model/tcp-option-sack.cc',
+        'model/tcp-option-ts.cc',
         'model/ipv4-packet-info-tag.cc',
         'model/ipv6-packet-info-tag.cc',
         'model/ipv4-interface-address.cc',
@@ -215,6 +223,8 @@ def build(bld):
     headers.source = [
         'model/udp-header.h',
         'model/tcp-header.h',
+        'model/tcp-option.h',
+        'model/tcp-option-no-op.h',
         'model/icmpv4.h',
         'model/icmpv6-header.h',
         # used by routing
