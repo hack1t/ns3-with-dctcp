@@ -27,6 +27,7 @@
 #include "ns3/simulator.h"
 #include "ns3/abort.h"
 #include "ns3/node.h"
+#include <cmath>
 
 NS_LOG_COMPONENT_DEFINE ("TcpNewReno");
 
@@ -272,8 +273,38 @@ TcpNewReno::HalveCwnd(void)
       m_ssThreshLastChange = Simulator::Now ();
       m_ssThresh = std::max (2 * m_segmentSize, BytesInFlight () / 2);
     }
+  double d = 1;
+
+  if (m_deadline != 0)
+    {
+      double B = m_bytesToTx - m_rtt->GetBytesSent ();
+      if (B <= 0)
+        {
+          d = 0.5;
+        }
+      else
+        {
+          double Tc = B * m_rtt->GetCurrentEstimate ().GetSeconds () / (3.0 * m_cWnd.Get() / 4.0);
+          double D = (m_deadlineFinish.GetSeconds ()) - Simulator::Now().GetSeconds ();
+
+          if (D <= 0)
+            {
+              d = 2.0;
+            }
+          else
+            {
+              d = Tc / D;
+              d = std::min(d, 2.0);
+              d = std::max(d, 0.5);
+            }
+        }
+    }
   double alpha = m_DCTCP ? m_rtt->GetAlpha () : 1;
-  double tmp = m_cWnd.Get() * (1 - alpha / 2);
+  double p = std::pow(alpha, d);
+
+  NS_ASSERT (p <= 1 && alpha <= 1 && p >= 0 && alpha >= 0);
+  double tmp = alpha ? (m_cWnd.Get() * (1 - p / 2)) : (m_cWnd.Get() + m_segmentSize);
+
   m_cWnd = std::max((uint32_t)tmp, m_segmentSize);
 }
 

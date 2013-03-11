@@ -106,8 +106,14 @@ RttEstimator::SetG (double g)
   m_g = g;
 }
 
+uint64_t
+RttEstimator::GetBytesSent (void) const
+{
+  return m_sentBytes;
+}
+
 //RttHistory methods
-RttHistory::RttHistory (SequenceNumber32 s, uint32_t c, Time t, uint64_t marked, uint64_t unmarked)
+RttHistory::RttHistory (SequenceNumber32 s, uint64_t c, Time t, uint64_t marked, uint64_t unmarked)
   : seq (s),
     count (c),
     time (t),
@@ -136,6 +142,7 @@ RttEstimator::RttEstimator ()
     m_history (),
     m_nSamples (0),
     m_multiplier (1),
+    m_sentBytes (0),
     m_g(0),
     m_marked(0),
     m_nonMarked(0),
@@ -156,8 +163,8 @@ RttEstimator::RttEstimator (const RttEstimator& c)
     m_maxMultiplier (c.m_maxMultiplier),
     m_initialEstimatedRtt (c.m_initialEstimatedRtt),
     m_currentEstimatedRtt (c.m_currentEstimatedRtt), m_minRto (c.m_minRto),
-    m_nSamples (c.m_nSamples), m_multiplier (c.m_multiplier), m_g(c.m_g),
-    m_marked(c.m_marked), m_nonMarked(c.m_nonMarked), m_alpha(c.m_alpha)
+    m_nSamples (c.m_nSamples), m_multiplier (c.m_multiplier), m_sentBytes (c.m_sentBytes),
+    m_g (c.m_g), m_marked (c.m_marked), m_nonMarked (c.m_nonMarked), m_alpha (c.m_alpha)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -175,6 +182,7 @@ void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
     { // This is the next expected one, just log at end
       m_history.push_back (RttHistory (seq, size, Simulator::Now (), m_marked, m_nonMarked));
       m_next = seq + SequenceNumber32 (size); // Update next expected
+      m_sentBytes += size; // Update number of sent bytes
     }
   else
     { // This is a retransmit, find in list and mark as re-tx
@@ -189,7 +197,10 @@ void RttEstimator::SentSeq (SequenceNumber32 seq, uint32_t size)
               if ((seq + SequenceNumber32 (size)) > m_next)
                 {
                   m_next = seq + SequenceNumber32 (size);
+                  m_sentBytes -= i->count;
+
                   i->count = ((seq + SequenceNumber32 (size)) - i->seq); // And update count in hist
+                  m_sentBytes += i->count;
                 }
               break;
             }

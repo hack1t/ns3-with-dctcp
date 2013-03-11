@@ -39,11 +39,11 @@ namespace ns3 {
  */
 class RttHistory {
 public:
-  RttHistory (SequenceNumber32 s, uint32_t c, Time t, uint64_t marked, uint64_t unmarked);
+  RttHistory (SequenceNumber32 s, uint64_t c, Time t, uint64_t marked, uint64_t unmarked);
   RttHistory (const RttHistory& h); // Copy constructor
 public:
   SequenceNumber32  seq;  // First sequence number in packet sent
-  uint32_t        count;  // Number of bytes sent
+  uint64_t        count;  // Number of bytes sent
   Time            time;   // Time this one was sent
   uint64_t        nonMarked; // Number of unmarked packets (needed for DCTCP)
   uint64_t        marked;   // Number of marked packets (needed for DCTCP)
@@ -163,6 +163,12 @@ public:
    */
   void SetG (double g);
 
+  /**
+   * \brief get the number of bytes sent so far
+   * \return number of bytes sent
+   */
+  uint64_t GetBytesSent (void) const;
+
 private:
   SequenceNumber32 m_next;    // Next expected sequence to be sent
   RttHistory_t m_history;     // List of sent packet
@@ -174,6 +180,7 @@ protected:
   Time         m_minRto;                  // minimum value of the timeout
   uint32_t     m_nSamples;                // Number of samples
   uint16_t     m_multiplier;              // RTO Multiplier
+  uint64_t     m_sentBytes;               // Number of bytes sent
   // Parameters needed for DCTCP
   double      m_g;
   uint64_t     m_marked;

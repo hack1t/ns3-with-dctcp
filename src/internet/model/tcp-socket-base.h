@@ -193,6 +193,12 @@ protected:
   virtual void AddOptions (TcpHeader&); // Add option to outgoing packets
   virtual void HalveCwnd(void) = 0;     // HalveCwnd when ECN CE flag is received
 
+  // D2TCP functions
+  virtual void SetDeadline (Time deadline);
+  virtual Time GetDeadline (void) const;
+  virtual void SetBytesToTx (uint64_t bytes);
+  virtual uint64_t GetBytesToTx (void) const;
+
 protected:
   // Counters and events
   EventId           m_retxEvent;       //< Retransmission event
@@ -248,6 +254,11 @@ protected:
   bool                    m_DCTCP;      //< Socket DCTCP capability
   double                  m_g;
   bool                    m_EcnTransition; //< flag for determing should we start new Delayed Ack count
+
+  // D2TCP related params
+  Time                     m_deadline;
+  Time                     m_deadlineFinish;
+  uint64_t                 m_bytesToTx;
 
   // Window management
   uint32_t              m_segmentSize; //< Segment size

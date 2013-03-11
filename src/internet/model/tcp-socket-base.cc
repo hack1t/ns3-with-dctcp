@@ -143,6 +143,9 @@ TcpSocketBase::TcpSocketBase (void)
     m_EcnState (NO_ECN),
     m_EcnEchoSeq (0),
     m_EcnTransition (false),
+    m_deadline (0),
+    m_deadlineFinish (0),
+    m_bytesToTx (0),
     m_segmentSize (0),
     // For attribute initialization consistency (quiet valgrind)
     m_rWnd (0)
@@ -184,6 +187,9 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_DCTCP (sock.m_DCTCP),
     m_g (sock.m_g),
     m_EcnTransition (sock.m_EcnTransition),
+    m_deadline (sock.m_deadline),
+    m_deadlineFinish (sock.m_deadlineFinish),
+    m_bytesToTx (sock.m_bytesToTx),
     m_segmentSize (sock.m_segmentSize),
     m_maxWinSize (sock.m_maxWinSize),
     m_rWnd (sock.m_rWnd)
@@ -444,6 +450,14 @@ TcpSocketBase::Connect (const Address & address)
   // Re-initialize parameters in case this socket is being reused after CLOSE
   m_rtt->Reset ();
   m_cnCount = m_cnRetries;
+  if (m_deadline != Time (0))
+    {
+      m_deadlineFinish = Simulator::Now () + m_deadline;
+    }
+  else
+    {
+      m_deadlineFinish = Time(0);
+    }
 
   // DoConnect() will do state-checking and send a SYN packet
   return DoConnect ();
@@ -476,6 +490,7 @@ TcpSocketBase::Close (void)
   if (m_rxBuffer.Size () != 0)
     {
       SendRST ();
+      CloseAndNotify ();
       return 0;
     }
   if (m_txBuffer.SizeFromSequence (m_nextTxSequence) > 0)
@@ -860,6 +875,14 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port
 
   if (m_EcnState & ECN_CONN)
     {
+      SocketDeadlineTag deadlineTag;
+
+      if (packet->RemovePacketTag(deadlineTag) &&
+            deadlineTag.GetDeadline () < Simulator::Now())
+        {
+          NS_LOG_INFO ("Deadline is exceeded by " << (Simulator::Now() - deadlineTag.GetDeadline ()));
+        }
+
       if (!m_DCTCP && (tcpHeader.GetFlags () & TcpHeader::CWR) &&
             (m_EcnState & ECN_TX_ECHO))
         {
@@ -1669,6 +1692,22 @@ TcpSocketBase::SendEmptyPacket (uint16_t flags)
   uint8_t ECNbits = (m_DCTCP && (m_EcnState & ECN_CONN)) ? Ipv4Header::ECT1 : 0;
   bool isAck = (flags == TcpHeader::ACK);
 
+  // For D2TCP - Check if deadline have passed
+  if (m_deadline != Time(0) && m_DCTCP)
+    {
+      // We should only initiate Close if we're not currently closing the socket
+      if (m_deadlineFinish < Simulator::Now() &&
+            !(flags & (TcpHeader::RST | TcpHeader::FIN)))
+        {
+          DoClose();
+          return;
+        }
+
+      SocketDeadlineTag deadlineTag;
+      deadlineTag.SetDeadline (m_deadlineFinish);
+      p->AddPacketTag (deadlineTag);
+    }
+
   /*
    * Add tags for each socket option.
    * Note that currently the socket adds both IPv4 tag and IPv6 tag
@@ -1805,14 +1844,16 @@ TcpSocketBase::SendEmptyPacket (uint16_t flags)
     }
 }
 
-/** This function closes the endpoint completely. Called upon RST_TX action. */
+/**
+ * Called upon RST_TX action. CloseAndNotify must be called after this function,
+ * so the EndPoints would be closed completely!!!
+ */
 void
 TcpSocketBase::SendRST (void)
 {
   NS_LOG_FUNCTION (this);
   SendEmptyPacket (TcpHeader::RST);
   NotifyErrorClose ();
-  DeallocateEndPoint ();
 }
 
 /** Deallocate the end point and cancel all the timers */
@@ -1965,12 +2006,27 @@ uint32_t
 TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
 {
   NS_LOG_FUNCTION (this << seq << maxSize << withAck);
+
   uint8_t ECNbits = (m_EcnState & ECN_CONN) ? Ipv4Header::ECT1 : 0;
 
   Ptr<Packet> p = m_txBuffer.CopyFromSequence (maxSize, seq);
   uint32_t sz = p->GetSize (); // Size of packet
   uint16_t flags = (withAck ? TcpHeader::ACK : 0);
   uint32_t remainingData = m_txBuffer.SizeFromSequence (seq + SequenceNumber32 (sz));
+
+  // For D2TCP - Check if deadline have passed
+  if (m_deadline != Time(0) && m_DCTCP)
+    {
+      if (m_deadlineFinish < Simulator::Now())
+        {
+          DoClose();
+          return 0;
+        }
+
+      SocketDeadlineTag deadlineTag;
+      deadlineTag.SetDeadline (m_deadlineFinish);
+      p->AddPacketTag (deadlineTag);
+    }
 
   if (m_EcnState & ECN_SEND_CWR)
     {
@@ -2133,8 +2189,15 @@ TcpSocketBase::SendPendingData (bool withAck)
         }
       uint32_t s = std::min (w, m_segmentSize);  // Send no more than window
       uint32_t sz = SendDataPacket (m_nextTxSequence, s, withAck);
-      nPacketsSent++;                             // Count sent this loop
-      m_nextTxSequence += sz;                     // Advance next tx sequence
+      if (sz > 0)
+        {
+          nPacketsSent++;                             // Count sent this loop, only if we've sent something
+          m_nextTxSequence += sz;                     // Advance next tx sequence
+        }
+      else
+        {
+          break;
+        }
     }
   NS_LOG_LOGIC ("SendPendingData sent " << nPacketsSent << " packets");
   return (nPacketsSent > 0);
@@ -2613,6 +2676,31 @@ TcpSocketBase::ReadOptions (const TcpHeader&)
 void
 TcpSocketBase::AddOptions (TcpHeader&)
 {
+}
+
+void
+TcpSocketBase::SetDeadline (Time deadline)
+{
+  NS_ASSERT (m_deadline == Time (0));
+  m_deadline = deadline;
+}
+
+Time
+TcpSocketBase::GetDeadline (void) const
+{
+  return m_deadline;
+}
+
+void
+TcpSocketBase::SetBytesToTx (uint64_t bytes)
+{
+  m_bytesToTx = bytes;
+}
+
+uint64_t
+TcpSocketBase::GetBytesToTx (void) const
+{
+  return m_bytesToTx;
 }
 
 } // namespace ns3

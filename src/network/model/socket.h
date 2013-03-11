@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include "ns3/inet-socket-address.h"
 #include "ns3/inet6-socket-address.h"
+#include "ns3/nstime.h"
 
 namespace ns3 {
 
@@ -790,6 +791,22 @@ public:
    */
   bool IsIpv6RecvHopLimit (void) const;
 
+  /**
+   * Experimental functions to set/get Deadline that this socket should meet.
+   * Socket classes that want to be deadline aware should override this functions.
+   */
+  virtual void SetDeadline (Time deadline);
+  virtual Time GetDeadline (void) const;
+
+  /**
+   * Experimental functions to set/get number of bytes that this socket should transmit.
+   * They are going to be used together with {Set, Get}Deadline functions.
+   *
+   * Socket classes that want to be deadline aware should override this functions.
+   */
+  virtual void SetBytesToTx (uint64_t bytes);
+  virtual uint64_t GetBytesToTx (void) const;
+
 protected:
   void NotifyConnectionSucceeded (void);
   void NotifyConnectionFailed (void);
@@ -968,6 +985,28 @@ public:
   virtual void Print (std::ostream &os) const;
 private:
   uint8_t m_ipv6Tclass;
+};
+
+/**
+ * \brief This class implements a tag that carries an finishing deadline time
+ * of a packet across the socket interface.
+ */
+class SocketDeadlineTag : public Tag
+{
+public:
+  SocketDeadlineTag ();
+  void SetDeadline (Time deadline);
+  Time GetDeadline (void) const;
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (TagBuffer i) const;
+  virtual void Deserialize (TagBuffer i);
+  virtual void Print (std::ostream &os) const;
+
+private:
+  Time m_deadlineFinish;
 };
 
 } // namespace ns3

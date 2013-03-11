@@ -80,6 +80,12 @@ OnOffApplication::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&OnOffApplication::m_maxBytes),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("Deadline",
+                   "Deadline to be met when sending data. 0 means that there"
+                   "is no deadline.",
+                   TimeValue (Time (0)),
+                   MakeTimeAccessor (&OnOffApplication::m_deadline),
+                   MakeTimeChecker ())
     .AddAttribute ("Protocol", "The type of protocol to use.",
                    TypeIdValue (UdpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&OnOffApplication::m_tid),
@@ -150,6 +156,8 @@ void OnOffApplication::StartApplication () // Called at time specified by Start
   if (!m_socket)
     {
       m_socket = Socket::CreateSocket (GetNode (), m_tid);
+      m_socket->SetBytesToTx(m_maxBytes);
+      m_socket->SetDeadline(m_deadline);
       m_txTraceSource (m_socket);
       m_socket->Bind ();
       m_socket->Connect (m_peer);
