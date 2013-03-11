@@ -92,6 +92,11 @@ TcpSocketBase::GetTypeId (void)
                    DoubleValue (1.0 / 16.0),
                    MakeDoubleAccessor (&TcpSocketBase::m_g),
                    MakeDoubleChecker<double> (0, 1))
+    .AddAttribute ("UserRTO",
+                   "User RTO",
+                   TimeValue (Time(0)),
+                   MakeTimeAccessor (&TcpSocketBase::m_userRto),
+                   MakeTimeChecker())
     .AddTraceSource ("RTO",
                      "Retransmission timeout",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rto))
@@ -161,6 +166,7 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_delAckMaxCount (sock.m_delAckMaxCount),
     m_noDelay (sock.m_noDelay),
     m_cnRetries (sock.m_cnRetries),
+    m_userRto (sock.m_userRto),
     m_delAckTimeout (sock.m_delAckTimeout),
     m_persistTimeout (sock.m_persistTimeout),
     m_cnTimeout (sock.m_cnTimeout),
@@ -2102,7 +2108,7 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
   AddOptions (header);
   if (m_retxEvent.IsExpired () )
     { // Schedule retransmit
-      m_rto = m_rtt->RetransmitTimeout ();
+      m_rto = (m_userRto != Time(0)) ? m_userRto : m_rtt->RetransmitTimeout ();
       NS_LOG_LOGIC (this << " SendDataPacket Schedule ReTxTimeout at time " <<
                     Simulator::Now ().GetSeconds () << " to expire at time " <<
                     (Simulator::Now () + m_rto.Get ()).GetSeconds () );
@@ -2331,7 +2337,7 @@ TcpSocketBase::NewAck (SequenceNumber32 const& ack)
                     (Simulator::Now () + Simulator::GetDelayLeft (m_retxEvent)).GetSeconds ());
       m_retxEvent.Cancel ();
       // On recieving a "New" ack we restart retransmission timer .. RFC 2988
-      m_rto = m_rtt->RetransmitTimeout ();
+      m_rto = (m_userRto != Time(0)) ? m_userRto : m_rtt->RetransmitTimeout ();
       NS_LOG_LOGIC (this << " Schedule ReTxTimeout at time " <<
                     Simulator::Now ().GetSeconds () << " to expire at time " <<
                     (Simulator::Now () + m_rto.Get ()).GetSeconds ());

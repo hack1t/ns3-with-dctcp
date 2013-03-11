@@ -212,6 +212,7 @@ protected:
   bool              m_noDelay;         //< Set to true to disable Nagle's algorithm
   uint32_t          m_cnCount;         //< Count of remaining connection retries
   uint32_t          m_cnRetries;       //< Number of connection retries before giving up
+  Time              m_userRto;
   TracedValue<Time> m_rto;             //< Retransmit timeout
   TracedValue<Time> m_lastRtt;         //< Last RTT sample collected
   Time              m_delAckTimeout;   //< Time to delay an ACK
