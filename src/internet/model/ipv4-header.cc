@@ -183,6 +183,11 @@ Ipv4Header::GetTos (void) const
 {
   return m_tos;
 }
+uint8_t
+Ipv4Header::GetPrecedence (void) const
+{
+  return (m_tos & 0xE0) >> 5;
+}
 void
 Ipv4Header::SetMoreFragments (void)
 {

@@ -166,6 +166,10 @@ public:
    */
   uint8_t GetTos (void) const;
   /**
+   * \returns the Precedence bits of TOS field
+   */
+  virtual uint8_t GetPrecedence(void) const;
+  /**
    * \returns the DSCP field of this packet.
    */
   DscpType GetDscp (void) const;

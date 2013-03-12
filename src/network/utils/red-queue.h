@@ -134,6 +134,11 @@ public:
    */
   void SetMode (RedQueue::QueueMode mode);
 
+  /**
+   * \brief Sets the number of queues in RED
+   */
+  void SetNoQueues (uint8_t noQueues);
+
   /*
    * \brief Get the encapsulation mode of this queue.
    * Get the encapsulation mode of this queue
@@ -202,9 +207,13 @@ private:
   double ModifyP (double p, uint64_t count, uint64_t countBytes,
                   uint32_t meanPktSize, bool wait, uint32_t size);
 
-  std::list<Ptr<Packet> > m_packets;
+  typedef std::list<Ptr<Packet> > queue_t;
+  typedef std::vector<queue_t> queueContainer;
+  queueContainer m_packets;
+  queueContainer::reverse_iterator m_queueIter;
 
   uint64_t m_bytesInQueue;
+  uint64_t m_packetsInQueue;
   bool m_hasRedStarted;
   Stats m_stats;
 
@@ -277,6 +286,23 @@ private:
   uint32_t m_cautious;
   // Start of current idle period
   Time m_idleTime;
+  int m_noQueues;
+
+  // Parameters needed for DRR
+  bool m_DRR;
+  std::vector<double> m_queueWeights;
+  std::vector<double>::reverse_iterator m_weightIter;
+  std::vector<double> m_queueCurrentWeights;
+  std::vector<double>::reverse_iterator m_weightIterCurrent;
+  double m_WQ1;
+  double m_WQ2;
+  double m_WQ3;
+  double m_WQ4;
+  double m_WQ5;
+  double m_WQ6;
+  double m_WQ7;
+  double m_WQ8;
+
   // Adaptive RED params
   bool m_adaptiveRED;
   EventId m_adapt;

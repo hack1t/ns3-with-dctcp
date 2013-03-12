@@ -108,6 +108,16 @@ public:
    * with its version.
    */
   virtual void SetCongested (void) { }
+
+  /**
+   * This method is used in Active Queues which classify packets based
+   * on their TOS precedence bits.
+   *
+   * Every Header class, that inherits Header and is Congestion Aware,
+   * like IPv4Header and IPv6Header, should override this function
+   * with its version.
+   */
+  virtual uint8_t GetPrecedence (void) const { return 0; }
 };
 
 std::ostream & operator << (std::ostream &os, const Header &header);

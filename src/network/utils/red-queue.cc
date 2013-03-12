@@ -65,6 +65,7 @@
 #include "ns3/random-variable-stream.h"
 #include "red-queue.h"
 #include <cmath>
+#include <algorithm>
 
 NS_LOG_COMPONENT_DEFINE ("RedQueue");
 
@@ -208,6 +209,56 @@ TypeId RedQueue::GetTypeId (void)
                      DoubleValue (0.01),
                      MakeDoubleAccessor (&RedQueue::m_minMaxP),
                      MakeDoubleChecker<double> ())
+    .AddAttribute ("NoQueues",
+                   "Number of queues (deafult is 8). IP packets are queued in (TOS % NoQueues) queue",
+                   UintegerValue (8),
+                   MakeUintegerAccessor (&RedQueue::SetNoQueues),
+                   MakeUintegerChecker<uint64_t> (1, 8))
+    .AddAttribute ("DRR",
+                   "Deficit Round Robin",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&RedQueue::m_DRR),
+                   MakeBooleanChecker ())
+    .AddAttribute ("WQ1",
+                   "Weight of queue 1 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                   DoubleValue (5000),
+                   MakeDoubleAccessor (&RedQueue::m_WQ1),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("WQ2",
+                   "Weight of queue 2 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                   DoubleValue (5000),
+                   MakeDoubleAccessor (&RedQueue::m_WQ2),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("WQ3",
+                   "Weight of queue 3 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                   DoubleValue (5000),
+                   MakeDoubleAccessor (&RedQueue::m_WQ3),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("WQ4",
+                   "Weight of queue 4 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                   DoubleValue (5000),
+                   MakeDoubleAccessor (&RedQueue::m_WQ4),
+                   MakeDoubleChecker<double> ())
+     .AddAttribute ("WQ5",
+                    "Weight of queue 5 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                    DoubleValue (5000),
+                    MakeDoubleAccessor (&RedQueue::m_WQ5),
+                    MakeDoubleChecker<double> ())
+     .AddAttribute ("WQ6",
+                    "Weight of queue 6 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                    DoubleValue (5000),
+                    MakeDoubleAccessor (&RedQueue::m_WQ6),
+                    MakeDoubleChecker<double> ())
+      .AddAttribute ("WQ7",
+                     "Weight of queue 7 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                     DoubleValue (5000),
+                     MakeDoubleAccessor (&RedQueue::m_WQ7),
+                     MakeDoubleChecker<double> ())
+      .AddAttribute ("WQ8",
+                     "Weight of queue 8 for DRR. Weight can be in BYTES or PACKETS depending on Queue mode",
+                     DoubleValue (5000),
+                     MakeDoubleAccessor (&RedQueue::m_WQ8),
+                     MakeDoubleChecker<double> ())
   ;
 
   return tid;
@@ -217,7 +268,9 @@ RedQueue::RedQueue () :
   Queue (),
   m_packets (),
   m_bytesInQueue (0),
+  m_packetsInQueue (0),
   m_hasRedStarted (false),
+  m_noQueues(0),
   m_calculateAlpha(true)
 {
   NS_LOG_FUNCTION (this);
@@ -228,6 +281,14 @@ RedQueue::~RedQueue ()
 {
   m_adapt.Cancel();
   NS_LOG_FUNCTION (this);
+}
+
+void
+RedQueue::SetNoQueues (uint8_t noQueues)
+{
+  NS_ASSERT(!m_hasRedStarted);
+  m_noQueues = noQueues;
+  m_packets.resize(noQueues);
 }
 
 void
@@ -289,22 +350,13 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
 
   uint64_t nQueued = 0;
 
-  if (GetMode () == QUEUE_MODE_BYTES)
-    {
-      NS_LOG_DEBUG ("Enqueue in bytes mode");
-      nQueued = m_bytesInQueue;
-    }
-  else if (GetMode () == QUEUE_MODE_PACKETS)
-    {
-      NS_LOG_DEBUG ("Enqueue in packets mode");
-      nQueued = m_packets.size ();
-    }
+  nQueued = GetQueueSize ();
 
   Estimator (nQueued);
   m_idle = false;
 
   NS_LOG_DEBUG ("\t bytesInQueue  " << m_bytesInQueue << "\tQavg " << m_qAvg);
-  NS_LOG_DEBUG ("\t packetsInQueue  " << m_packets.size () << "\tQavg " << m_qAvg);
+  NS_LOG_DEBUG ("\t packetsInQueue  " << m_packetsInQueue << "\tQavg " << m_qAvg);
 
   m_count++;
   m_countBytes += p->GetSize ();
@@ -351,13 +403,14 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
       m_stats.qLimDrop++;
     }
 
+  Ptr<Header> header;
+  uint32_t offset = p->GetIpHeader (header);
+  uint8_t tos = !!header ? header->GetPrecedence () : 0;
+
   /* Try to mark ECN bits first */
   if (dropType == DTYPE_UNFORCED_SOFT ||
         dropType == DTYPE_UNFORCED_HARD)
     {
-      Ptr<Header> header;
-      uint32_t offset = 0;
-      offset = p->GetIpHeader (header);
       if (!!header && header->IsCongestionAware())
         {
           header->SetCongested();
@@ -396,9 +449,10 @@ RedQueue::DoEnqueue (Ptr<Packet> p)
     };
 
   m_bytesInQueue += p->GetSize ();
-  m_packets.push_back (p);
+  m_packetsInQueue++;
+  m_packets[tos % m_packets.size()].push_back (p);
 
-  NS_LOG_LOGIC ("Number packets " << m_packets.size ());
+  NS_LOG_LOGIC ("Number packets " << m_packetsInQueue);
   NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
   return true;
@@ -542,6 +596,70 @@ RedQueue::InitializeParams (void)
         }
       m_adapt = Simulator::Schedule (m_adaptInterval, &RedQueue::AdaptMaxP, this);
     }
+
+  // Initialize Queue Weights for DRR
+  if (m_noQueues > 0)
+    {
+      m_packets.resize(m_noQueues);
+      m_queueWeights.resize(m_noQueues);
+      m_queueCurrentWeights.resize(m_noQueues);
+
+      if (0 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[0] = m_WQ1;
+          m_queueCurrentWeights[0] = 0;
+      }
+
+      if (1 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[1] = m_WQ2;
+          m_queueCurrentWeights[1] = 0;
+      }
+
+      if (2 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[2] = m_WQ3;
+          m_queueCurrentWeights[2] = 0;
+      }
+
+      if (3 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[3] = m_WQ4;
+          m_queueCurrentWeights[3] = 0;
+      }
+
+      if (4 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[4] = m_WQ5;
+          m_queueCurrentWeights[4] = 0;
+      }
+
+      if (5 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[5] = m_WQ6;
+          m_queueCurrentWeights[5] = 0;
+      }
+
+      if (6 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[6] = m_WQ7;
+          m_queueCurrentWeights[6] = 0;
+      }
+
+      if (7 < std::min(m_noQueues, (int)8))
+        {
+          m_queueWeights[7] = m_WQ8;
+          m_queueCurrentWeights[7] = 0;
+      }
+
+      /* Initialize for the last queue! This way we're not loosing any iterations */
+      m_queueCurrentWeights[m_noQueues - 1] = m_queueWeights[m_noQueues - 1];
+
+      m_queueIter = m_packets.rbegin();
+      m_weightIterCurrent = m_queueCurrentWeights.rbegin();
+      m_weightIter = m_queueWeights.rbegin();
+    }
+  m_noQueues = -1;
 
   NS_LOG_DEBUG ("\tm_delay " << m_linkDelay.GetSeconds () << "; m_isWait "
                              << m_isWait << "; m_qW " << m_qW << "; m_ptc " << m_ptc
@@ -758,7 +876,7 @@ RedQueue::GetQueueSize (void) const
     }
   else if (GetMode () == QUEUE_MODE_PACKETS)
     {
-      return m_packets.size ();
+      return m_packetsInQueue;
     }
   else
     {
@@ -771,46 +889,119 @@ RedQueue::DoDequeue (void)
 {
   NS_LOG_FUNCTION (this);
 
-  if (m_packets.empty ())
-    {
-      NS_LOG_LOGIC ("Queue empty");
-      m_idle = true;
-      m_idleTime = Simulator::Now ();
+  NS_ASSERT(m_packets.size() == m_queueCurrentWeights.size() && m_packets.size() == m_queueWeights.size());
+  std::vector<bool> is_empty(m_packets.size(), false);
+  std::vector<bool> all_empty(m_packets.size(), true);
 
-      return 0;
-    }
-  else
+  if (!m_DRR)
     {
-      m_idle = false;
-      Ptr<Packet> p = m_packets.front ();
-      m_packets.pop_front ();
+      m_queueIter = m_packets.rbegin();
+      m_weightIterCurrent = m_queueCurrentWeights.rbegin();
+      m_weightIter = m_queueWeights.rbegin();
+    }
+
+  for (uint32_t i = 0; i < m_packets.size() || m_DRR;
+                          m_queueIter = (++m_queueIter == m_packets.rend()) ? m_packets.rbegin() : m_queueIter,
+                          m_weightIterCurrent = (++m_weightIterCurrent == m_queueCurrentWeights.rend()) ? m_queueCurrentWeights.rbegin() : m_weightIterCurrent,
+                          m_weightIter = (++m_weightIter == m_queueWeights.rend()) ? m_queueWeights.rbegin() : m_weightIter,
+                          ++i)
+    {
+      if (m_DRR && i != 0)
+        {
+          *m_weightIterCurrent += *m_weightIter;
+        }
+
+      if (m_queueIter->size() == 0)
+        {
+          if (m_DRR)
+            {
+              is_empty[i % m_packets.size()] = true;
+              *m_weightIterCurrent = 0;
+              if (is_empty == all_empty)
+                {
+                  break;
+                }
+            }
+          continue;
+        }
+
+      Ptr<Packet> p = m_queueIter->front ();
+      if (m_DRR)
+        {
+          if (m_mode == QUEUE_MODE_BYTES)
+            {
+              if (*m_weightIterCurrent > p->GetSize())
+                {
+                  *m_weightIterCurrent -= p->GetSize();
+                }
+              else
+                {
+                  continue;
+                }
+            }
+          else
+            {
+              if (*m_weightIterCurrent >= 1)
+                {
+                  *m_weightIterCurrent -= 1;
+                }
+              else
+                {
+                  continue;
+                }
+            }
+        }
+
+      m_queueIter->pop_front ();
       m_bytesInQueue -= p->GetSize ();
+      m_packetsInQueue--;
 
       NS_LOG_LOGIC ("Popped " << p);
 
-      NS_LOG_LOGIC ("Number packets " << m_packets.size ());
+      NS_LOG_LOGIC ("Number packets " << m_packetsInQueue);
       NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
       return p;
     }
+
+  if (m_DRR)
+    {
+      *m_weightIterCurrent += *m_weightIter;
+    }
+
+  NS_LOG_LOGIC ("Queue empty");
+  m_idle = true;
+  m_idleTime = Simulator::Now ();
+
+  return 0;
 }
 
 Ptr<const Packet>
 RedQueue::DoPeek (void) const
 {
   NS_LOG_FUNCTION (this);
-  if (m_packets.empty ())
+  if (!m_packetsInQueue)
     {
       NS_LOG_LOGIC ("Queue empty");
       return 0;
     }
 
-  Ptr<Packet> p = m_packets.front ();
+  int i = 0;
+  queueContainer::const_reverse_iterator iter = m_DRR ? static_cast<queueContainer::const_reverse_iterator>(m_queueIter) : m_packets.rbegin();
+  for (; i < (int)m_packets.size(); iter = (++iter == m_packets.rend()) ? m_packets.rbegin() : iter, ++i)
+    {
+      if (iter->size() != 0)
+        {
+          Ptr<Packet> p = iter->front ();
+          NS_LOG_LOGIC ("Number packets " << m_packetsInQueue);
+          NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
-  NS_LOG_LOGIC ("Number packets " << m_packets.size ());
-  NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
+          return p;
+        }
+    }
 
-  return p;
+  /* UNREACHABLE */
+  return 0;
 }
 
 } // namespace ns3
