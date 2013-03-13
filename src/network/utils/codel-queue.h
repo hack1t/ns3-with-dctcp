@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * Codel, the COntrolled DELay Queueing discipline
  * Based on ns2 simulation code presented by Kathie Nichols
  *
@@ -110,6 +110,7 @@ private:
   uint32_t m_minbytes;
   Time m_Interval;
   Time m_Target;
+  uint32_t m_lastcount;
   TracedValue<uint32_t> m_count;
   TracedValue<uint32_t> m_drop_count;
   bool m_dropping;

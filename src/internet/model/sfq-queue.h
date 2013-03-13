@@ -24,6 +24,7 @@
 #include "ns3/queue.h"
 #include <map>
 #include "ns3/red-queue.h"
+#include "ns3/random-variable.h"
 
 namespace ns3 {
 

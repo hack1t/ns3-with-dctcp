@@ -437,7 +437,8 @@ main (int argc, char *argv[])
 
   //configure tracing
   AsciiTraceHelper ascii;
-  pointToPoint.EnableAsciiAll (ascii.CreateFileStream ("tcp-qfp.tr"));
+  Ptr<OutputStreamWrapper> stream = ascii.CreateFileStream ("tcp-qfp.tr");
+  pointToPoint.EnableAsciiAll (stream);
   pointToPoint.EnablePcapAll ("tcp-qfp");
 
   // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/$ns3::CoDelQueue/count",

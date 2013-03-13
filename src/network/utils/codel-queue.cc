@@ -146,28 +146,28 @@ CoDelTimestampTag::GetTxTime (void) const
 
 NS_OBJECT_ENSURE_REGISTERED (CoDelQueue);
 
-TypeId CoDelQueue::GetTypeId (void) 
+TypeId CoDelQueue::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::CoDelQueue")
     .SetParent<Queue> ()
     .AddConstructor<CoDelQueue> ()
-    .AddAttribute ("Mode", 
+    .AddAttribute ("Mode",
                    "Whether to use Bytes (see MaxBytes) or Packets (see MaxPackets) as the maximum queue size metric.",
                    EnumValue (BYTES),
                    MakeEnumAccessor (&CoDelQueue::SetMode),
                    MakeEnumChecker (BYTES, "Bytes",
                                     PACKETS, "Packets"))
-    .AddAttribute ("MaxPackets", 
+    .AddAttribute ("MaxPackets",
                    "The maximum number of packets accepted by this CoDelQueue.",
                    UintegerValue (DEFAULT_CODEL_LIMIT),
                    MakeUintegerAccessor (&CoDelQueue::m_maxPackets),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("MaxBytes", 
+    .AddAttribute ("MaxBytes",
                    "The maximum number of bytes accepted by this CoDelQueue.",
                    UintegerValue (1500*DEFAULT_CODEL_LIMIT),
                    MakeUintegerAccessor (&CoDelQueue::m_maxBytes),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("MinBytes", 
+    .AddAttribute ("MinBytes",
                    "The CoDel algorithm minbytes parameter.",
                    UintegerValue (1500),
                    MakeUintegerAccessor (&CoDelQueue::m_minbytes),
@@ -202,6 +202,7 @@ CoDelQueue::CoDelQueue () :
   m_maxBytes(),
   m_bytesInQueue(0),
   backlog(&m_bytesInQueue),
+  m_lastcount(0),
   m_count(0),
   m_drop_count(0),
   m_dropping(false),
@@ -212,7 +213,7 @@ CoDelQueue::CoDelQueue () :
   m_state2(0),
   m_state3(0),
   m_states(0),
-  m_drop_overlimit(0)  
+  m_drop_overlimit(0)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -234,7 +235,7 @@ CoDelQueue::NewtonStep(void)
   m_rec_inv_sqrt = val >> REC_INV_SQRT_SHIFT;
 }
 
-codel_time_t 
+codel_time_t
 CoDelQueue::ControlLaw(codel_time_t t)
 {
   return t + reciprocal_divide(TIME2CODEL(m_Interval), m_rec_inv_sqrt << REC_INV_SQRT_SHIFT);
@@ -254,7 +255,7 @@ CoDelQueue::GetMode (void)
   return m_mode;
 }
 
-bool 
+bool
 CoDelQueue::DoEnqueue (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
@@ -295,8 +296,8 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
   Time delta = Simulator::Now () - tag.GetTxTime ();
   NS_LOG_INFO ("Sojourn time "<<delta.GetSeconds ());
   codel_time_t sojourn_time = TIME2CODEL(delta);
-  
-  if (codel_time_before(sojourn_time, TIME2CODEL(m_Target)) || 
+
+  if (codel_time_before(sojourn_time, TIME2CODEL(m_Target)) ||
       *backlog < m_minbytes)
     {
       /* went below so we'll stay below for at least q->interval */
@@ -304,15 +305,15 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
       return false;
     }
   drop = false;
-  if (m_first_above_time == 0) 
+  if (m_first_above_time == 0)
     {
       /* just went above from below. If we stay above
        * for at least q->interval we'll say it's ok to drop
        */
       m_first_above_time = now + TIME2CODEL(m_Interval);
-    } 
-  else 
-    if (codel_time_after(now, m_first_above_time)) 
+    }
+  else
+    if (codel_time_after(now, m_first_above_time))
       {
         drop = true;
         ++m_state1;
@@ -348,7 +349,7 @@ CoDelQueue::DoDequeue (void)
     {
       if (!drop)
         {
-          /* sojourn time below target - leave dropping state */    
+          /* sojourn time below target - leave dropping state */
           m_dropping = false;
         }
       else
@@ -356,14 +357,14 @@ CoDelQueue::DoDequeue (void)
           {
             m_state2++;
             /* It's time for the next drop. Drop the current
-             * packet and dequeue the next. The dequeue might 
-             * take us out of dropping state. 
+             * packet and dequeue the next. The dequeue might
+             * take us out of dropping state.
              * If not, schedule the next drop.
              * A large backlog might result in drop rates so high
-             * that the next drop should happen now, 
+             * that the next drop should happen now,
              * hence the while loop.
-             */  
-            while (m_dropping && 
+             */
+            while (m_dropping &&
                    codel_time_after_eq(now, m_drop_next)) {
               Drop(p);
               ++m_drop_count;
@@ -384,12 +385,12 @@ CoDelQueue::DoDequeue (void)
               NS_LOG_LOGIC ("Number packets " << m_packets.size ());
               NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
-              if (!ShouldDrop(p, now)) 
+              if (!ShouldDrop(p, now))
                 {
                   /* leave dropping state */
                   m_dropping = false;
                 }
-              else 
+              else
                 {
                   /* and schedule the next drop */
                   m_drop_next = ControlLaw(m_drop_next);
@@ -397,12 +398,8 @@ CoDelQueue::DoDequeue (void)
             }
           }
     }
-  else 
-    if (drop &&
-        (codel_time_before(now - m_drop_next,
-                           TIME2CODEL(m_Interval)) ||
-         codel_time_after_eq(now - m_first_above_time,
-                             TIME2CODEL(m_Interval)))) 
+  else if (drop && (codel_time_before(now - m_drop_next, TIME2CODEL(m_Interval)) ||
+                     codel_time_after_eq(now - m_first_above_time, TIME2CODEL(m_Interval))))
       {
         ++m_drop_count;
 
@@ -413,17 +410,17 @@ CoDelQueue::DoDequeue (void)
         drop = ShouldDrop(p, now);
         m_dropping = true;
         ++m_state3;
-        /* 
+        /*
          * if min went above target close to when we last went below it
          * assume that the drop rate that controlled the queue on the
          * last cycle is a good starting point to control it now.
          */
         int delta = m_count - m_lastcount;
-        if (delta > 1 && codel_time_after(now - m_drop_next, TIME2CODEL(m_Interval))) 
+        if (delta > 1 && codel_time_after(now - m_drop_next, TIME2CODEL(m_Interval)))
           {
             m_count = delta;
             NewtonStep();
-          } 
+          }
         else
           {
             m_count = 1;
