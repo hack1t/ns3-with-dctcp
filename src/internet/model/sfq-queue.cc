@@ -155,7 +155,7 @@ SfqQueue::DoEnqueue (Ptr<Packet> p)
 
   uint32_t sz = p->GetSize();
 
-  if ((queued = slot->q->Enqueue(p))) {
+  if ((queued = slot->q->Enqueue(p, false))) {
     slot->backlog += sz;
   }
 

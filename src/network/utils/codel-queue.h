@@ -123,6 +123,23 @@ private:
   uint32_t m_states;
   uint32_t m_drop_overlimit;
   Mode     m_mode;
+
+  class CoDelTimestampTag : public Tag
+  {
+  public:
+    CoDelTimestampTag ();
+    static TypeId GetTypeId (void);
+    virtual TypeId GetInstanceTypeId (void) const;
+
+    virtual uint32_t GetSerializedSize (void) const;
+    virtual void Serialize (TagBuffer i) const;
+    virtual void Deserialize (TagBuffer i);
+    virtual void Print (std::ostream &os) const;
+
+    Time GetTxTime (void) const;
+  private:
+    uint64_t m_creationTime;
+  };
 };
 
 } // namespace ns3

@@ -18,6 +18,7 @@
 
 #include "ns3/log.h"
 #include "ns3/trace-source-accessor.h"
+#include "ns3/simulator.h"
 #include "queue.h"
 
 NS_LOG_COMPONENT_DEFINE ("Queue");
@@ -46,8 +47,10 @@ Queue::Queue() :
   m_nTotalReceivedBytes (0),
   m_nPackets (0),
   m_nTotalReceivedPackets (0),
+  m_nTotalSentPackets (0),
   m_nTotalDroppedBytes (0),
-  m_nTotalDroppedPackets (0)
+  m_nTotalDroppedPackets (0),
+  m_packetJurneySum (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -59,13 +62,18 @@ Queue::~Queue()
 
 
 bool
-Queue::Enqueue (Ptr<Packet> p)
+Queue::Enqueue (Ptr<Packet> p, bool tagit)
 {
   NS_LOG_FUNCTION (this << p);
 
   //
   // If DoEnqueue fails, Queue::Drop is called by the subclass
   //
+  if (tagit)
+    {
+      Queue::TimestampTag tag;
+      p->AddPacketTag (tag);
+    }
   bool retval = DoEnqueue (p);
   if (retval)
     {
@@ -83,7 +91,7 @@ Queue::Enqueue (Ptr<Packet> p)
 }
 
 Ptr<Packet>
-Queue::Dequeue (void)
+Queue::Dequeue (bool untagit)
 {
   NS_LOG_FUNCTION (this);
 
@@ -93,6 +101,16 @@ Queue::Dequeue (void)
     {
       NS_ASSERT (m_nBytes >= packet->GetSize ());
       NS_ASSERT (m_nPackets > 0);
+
+      if (untagit)
+        {
+          Queue::TimestampTag tag;
+          packet->PeekPacketTag (tag);
+          m_packetJurneySum += Simulator::Now () - tag.GetTxTime ();
+          packet->RemovePacketTag(tag);
+        }
+      m_nTotalSentPackets++;
+
 
       m_nBytes -= packet->GetSize ();
       m_nPackets--;
@@ -121,7 +139,7 @@ Queue::Peek (void) const
 }
 
 
-uint32_t
+uint64_t
 Queue::GetNPackets (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -129,12 +147,21 @@ Queue::GetNPackets (void) const
   return m_nPackets;
 }
 
-uint32_t
+uint64_t
 Queue::GetNBytes (void) const
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (" returns " << m_nBytes);
   return m_nBytes;
+}
+
+Time
+Queue::GetPacketJurneyAvg (void) const
+{
+  Time jurneyAvg = Time::FromDouble(m_packetJurneySum.GetSeconds() / m_nTotalSentPackets, Time::S);
+  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_LOGIC (" returns " << jurneyAvg);
+  return jurneyAvg;
 }
 
 bool
@@ -145,7 +172,7 @@ Queue::IsEmpty (void) const
   return m_nPackets == 0;
 }
 
-uint32_t
+uint64_t
 Queue::GetTotalReceivedBytes (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -153,7 +180,7 @@ Queue::GetTotalReceivedBytes (void) const
   return m_nTotalReceivedBytes;
 }
 
-uint32_t
+uint64_t
 Queue::GetTotalReceivedPackets (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -161,7 +188,7 @@ Queue::GetTotalReceivedPackets (void) const
   return m_nTotalReceivedPackets;
 }
 
-uint32_t
+uint64_t
 Queue:: GetTotalDroppedBytes (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -169,7 +196,7 @@ Queue:: GetTotalDroppedBytes (void) const
   return m_nTotalDroppedBytes;
 }
 
-uint32_t
+uint64_t
 Queue::GetTotalDroppedPackets (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -183,6 +210,7 @@ Queue::ResetStatistics (void)
   NS_LOG_FUNCTION (this);
   m_nTotalReceivedBytes = 0;
   m_nTotalReceivedPackets = 0;
+  m_nTotalSentPackets = 0;
   m_nTotalDroppedBytes = 0;
   m_nTotalDroppedPackets = 0;
 }
@@ -203,6 +231,53 @@ Queue::Drop (Ptr<Packet> p, bool wasEnqueued)
 
   NS_LOG_LOGIC ("m_traceDrop (p)");
   m_traceDrop (p);
+}
+
+Queue::TimestampTag::TimestampTag ()
+  : m_creationTime (Simulator::Now ())
+{
+}
+
+TypeId
+Queue::TimestampTag::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::Queue::TimestampTag")
+    .SetParent<Tag> ()
+    .AddConstructor<TimestampTag> ()
+  ;
+  return tid;
+}
+
+TypeId
+Queue::TimestampTag::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+Queue::TimestampTag::GetSerializedSize (void) const
+{
+  return sizeof(double);
+}
+void
+Queue::TimestampTag::Serialize (TagBuffer i) const
+{
+  i.WriteDouble (m_creationTime.ToDouble(Time::NS));
+}
+void
+Queue::TimestampTag::Deserialize (TagBuffer i)
+{
+  m_creationTime = Time::FromDouble(i.ReadDouble (), Time::NS);
+}
+void
+Queue::TimestampTag::Print (std::ostream &os) const
+{
+  os << "CreationTime = " << m_creationTime << " ";
+}
+Time
+Queue::TimestampTag::GetTxTime (void) const
+{
+  return m_creationTime;
 }
 
 } // namespace ns3

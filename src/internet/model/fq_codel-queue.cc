@@ -188,7 +188,7 @@ begin:
       goto begin;
     }
 
-  Ptr<Packet> p = flow->q->Dequeue();
+  Ptr<Packet> p = flow->q->Dequeue(false);
   if (p == NULL)
     {
       /* force a pass through old_flows to prevent starvation */

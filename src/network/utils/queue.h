@@ -29,6 +29,7 @@
 #include "ns3/packet.h"
 #include "ns3/object.h"
 #include "ns3/traced-callback.h"
+#include "ns3/nstime.h"
 
 namespace ns3 {
 
@@ -59,12 +60,12 @@ public:
    * \param p packet to enqueue
    * \return True if the operation was successful; false otherwise
    */
-  bool Enqueue (Ptr<Packet> p);
+  bool Enqueue (Ptr<Packet> p, bool tagit = true);
   /**
    * Remove a packet from the front of the Queue
    * \return 0 if the operation was not successful; the packet otherwise.
    */
-  Ptr<Packet> Dequeue (void);
+  Ptr<Packet> Dequeue (bool untagit = true);
   /**
    * Get a copy of the item at the front of the queue without removing it
    * \return 0 if the operation was not successful; the packet otherwise.
@@ -78,11 +79,13 @@ public:
   /**
    * \return The number of packets currently stored in the Queue
    */
-  uint32_t GetNPackets (void) const;
+  uint64_t GetNPackets (void) const;
   /**
    * \return The number of bytes currently occupied by the packets in the Queue
    */
-  uint32_t GetNBytes (void) const;
+  uint64_t GetNBytes (void) const;
+
+  Time GetPacketJurneyAvg (void) const;
 
   /**
    * \return The total number of bytes received by this Queue since the
@@ -90,25 +93,25 @@ public:
    * whichever happened more recently
    *
    */
-  uint32_t GetTotalReceivedBytes (void) const;
+  uint64_t GetTotalReceivedBytes (void) const;
   /**
    * \return The total number of packets received by this Queue since the
    * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
    */
-  uint32_t GetTotalReceivedPackets (void) const;
+  uint64_t GetTotalReceivedPackets (void) const;
   /**
    * \return The total number of bytes dropped by this Queue since the
    * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
    */
-  uint32_t GetTotalDroppedBytes (void) const;
+  uint64_t GetTotalDroppedBytes (void) const;
   /**
    * \return The total number of bytes dropped by this Queue since the
    * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
    */
-  uint32_t GetTotalDroppedPackets (void) const;
+  uint64_t GetTotalDroppedPackets (void) const;
   /**
    * Resets the counts for dropped packets, dropped bytes, received packets, and
    * received bytes.
@@ -164,12 +167,32 @@ private:
   TracedCallback<Ptr<const Packet> > m_traceDequeue;
   TracedCallback<Ptr<const Packet> > m_traceDrop;
 
-  uint32_t m_nBytes;
-  uint32_t m_nTotalReceivedBytes;
-  uint32_t m_nPackets;
-  uint32_t m_nTotalReceivedPackets;
-  uint32_t m_nTotalDroppedBytes;
-  uint32_t m_nTotalDroppedPackets;
+  uint64_t m_nBytes;
+  uint64_t m_nTotalReceivedBytes;
+  uint64_t m_nPackets;
+  uint64_t m_nTotalReceivedPackets;
+  uint64_t m_nTotalSentPackets;
+  uint64_t m_nTotalDroppedBytes;
+  uint64_t m_nTotalDroppedPackets;
+  Time     m_packetJurneySum;
+
+  // Used for TimeStamping packets
+  class TimestampTag : public Tag
+  {
+  public:
+    TimestampTag ();
+    static TypeId GetTypeId (void);
+    virtual TypeId GetInstanceTypeId (void) const;
+
+    virtual uint32_t GetSerializedSize (void) const;
+    virtual void Serialize (TagBuffer i) const;
+    virtual void Deserialize (TagBuffer i);
+    virtual void Print (std::ostream &os) const;
+
+    Time GetTxTime (void) const;
+  private:
+    Time m_creationTime;
+  };
 };
 
 } // namespace ns3

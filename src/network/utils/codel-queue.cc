@@ -76,32 +76,15 @@ static codel_time_t codel_get_time(void)
 #define DEFAULT_CODEL_LIMIT 1000
 
 
-class CoDelTimestampTag : public Tag
-{
-public:
-  CoDelTimestampTag ();
-  static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
-
-  virtual uint32_t GetSerializedSize (void) const;
-  virtual void Serialize (TagBuffer i) const;
-  virtual void Deserialize (TagBuffer i);
-  virtual void Print (std::ostream &os) const;
-
-  Time GetTxTime (void) const;
-private:
-  uint64_t m_creationTime;
-};
-
-CoDelTimestampTag::CoDelTimestampTag ()
+CoDelQueue::CoDelTimestampTag::CoDelTimestampTag ()
   : m_creationTime (Simulator::Now ().GetTimeStep ())
 {
 }
 
 TypeId
-CoDelTimestampTag::GetTypeId (void)
+CoDelQueue::CoDelTimestampTag::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("anon::CoDelTimestampTag")
+  static TypeId tid = TypeId ("ns3::CoDelQueue::CoDelTimestampTag")
     .SetParent<Tag> ()
     .AddConstructor<CoDelTimestampTag> ()
     .AddAttribute ("CreationTime",
@@ -113,33 +96,33 @@ CoDelTimestampTag::GetTypeId (void)
   return tid;
 }
 TypeId
-CoDelTimestampTag::GetInstanceTypeId (void) const
+CoDelQueue::CoDelTimestampTag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint32_t
-CoDelTimestampTag::GetSerializedSize (void) const
+CoDelQueue::CoDelTimestampTag::GetSerializedSize (void) const
 {
   return 8;
 }
 void
-CoDelTimestampTag::Serialize (TagBuffer i) const
+CoDelQueue::CoDelTimestampTag::Serialize (TagBuffer i) const
 {
   i.WriteU64 (m_creationTime);
 }
 void
-CoDelTimestampTag::Deserialize (TagBuffer i)
+CoDelQueue::CoDelTimestampTag::Deserialize (TagBuffer i)
 {
   m_creationTime = i.ReadU64 ();
 }
 void
-CoDelTimestampTag::Print (std::ostream &os) const
+CoDelQueue::CoDelTimestampTag::Print (std::ostream &os) const
 {
   os << "CreationTime=" << m_creationTime;
 }
 Time
-CoDelTimestampTag::GetTxTime (void) const
+CoDelQueue::CoDelTimestampTag::GetTxTime (void) const
 {
   return TimeStep (m_creationTime);
 }
@@ -277,7 +260,7 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
     }
 
   CoDelTimestampTag tag;
-  p->AddByteTag (tag);
+  p->AddPacketTag (tag);
   m_bytesInQueue += p->GetSize ();
   m_packets.push (p);
 
@@ -292,7 +275,7 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
 {
   CoDelTimestampTag tag;
   bool drop;
-  p->FindFirstMatchingByteTag (tag);
+  p->PeekPacketTag (tag);
   Time delta = Simulator::Now () - tag.GetTxTime ();
   NS_LOG_INFO ("Sojourn time "<<delta.GetSeconds ());
   codel_time_t sojourn_time = TIME2CODEL(delta);
@@ -431,6 +414,11 @@ CoDelQueue::DoDequeue (void)
         p = NULL;
       }
   ++m_states;
+  if (!!p)
+    {
+      CoDelTimestampTag tag;
+      p->RemovePacketTag (tag);
+    }
   return p;
 }
 
