@@ -50,6 +50,10 @@ template <typename U1, typename U2, typename U3, typename U4, typename U5,
           typename T1, typename T2, typename T3, typename T4, typename T5>
 EventImpl * MakeEvent (void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
 
+template <typename U1, typename U2, typename U3, typename U4, typename U5, typename U6,
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+EventImpl * MakeEvent (void (*f)(U1,U2,U3,U4,U5,U6), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6);
+
 } // namespace ns3
 
 /********************************************************************
@@ -436,6 +440,46 @@ private:
     typename TypeTraits<T4>::ReferencedType m_a4;
     typename TypeTraits<T5>::ReferencedType m_a5;
   } *ev = new EventFunctionImpl5 (f, a1, a2, a3, a4, a5);
+  return ev;
+}
+
+template <typename U1, typename U2, typename U3, typename U4, typename U5, typename U6,
+          typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+EventImpl * MakeEvent (void (*f)(U1,U2,U3,U4,U5,U6), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+{
+  // six arg version
+  class EventFunctionImpl6 : public EventImpl
+  {
+public:
+    typedef void (*F)(U1,U2,U3,U4,U5,U6);
+
+    EventFunctionImpl6 (F function, T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
+      : m_function (function),
+        m_a1 (a1),
+        m_a2 (a2),
+        m_a3 (a3),
+        m_a4 (a4),
+        m_a5 (a5),
+        m_a6 (a6)
+    {
+    }
+protected:
+    virtual ~EventFunctionImpl6 ()
+    {
+    }
+private:
+    virtual void Notify (void)
+    {
+      (*m_function)(m_a1, m_a2, m_a3, m_a4, m_a5, m_a6);
+    }
+    F m_function;
+    typename TypeTraits<T1>::ReferencedType m_a1;
+    typename TypeTraits<T2>::ReferencedType m_a2;
+    typename TypeTraits<T3>::ReferencedType m_a3;
+    typename TypeTraits<T4>::ReferencedType m_a4;
+    typename TypeTraits<T5>::ReferencedType m_a5;
+    typename TypeTraits<T6>::ReferencedType m_a6;
+  } *ev = new EventFunctionImpl6 (f, a1, a2, a3, a4, a5, a6);
   return ev;
 }
 
