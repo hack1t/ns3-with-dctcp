@@ -191,6 +191,8 @@ private:
   virtual Ptr<Packet> DoDequeue (void);
   virtual Ptr<const Packet> DoPeek (void) const;
 
+  bool DropOldest(Ptr<Packet> p, bool ECNMark, uint64_t &dropStats);
+
   // Estimates Average Queue Size and adapts maxP param.
   // This functions is call on every m_adaptInterval
   void AdaptMaxP(void);
@@ -207,13 +209,19 @@ private:
   double ModifyP (double p, uint64_t count, uint64_t countBytes,
                   uint32_t meanPktSize, bool wait, uint32_t size);
 
-  typedef std::list<Ptr<Packet> > queue_t;
-  typedef std::vector<queue_t> queueContainer;
-  queueContainer m_packets;
-  queueContainer::reverse_iterator m_queueIter;
+  typedef std::list<std::pair<Ptr<Packet>, uint8_t> > MasterQueue_t; /* Each packet needs to know in what queue it's actually residing. */
+  typedef std::list<std::pair<Ptr<Packet>, MasterQueue_t::iterator> > Queue_t;
+  typedef std::vector<Queue_t> QueueContainer;
 
+  QueueContainer m_packetQueues;
+  QueueContainer::reverse_iterator m_queueIter;
+
+  // Vars needed for the Oldest Packet Drop Algorithm
+  bool m_headDrop;
+  MasterQueue_t m_packets; // packets ordered by the time of their arrival
+
+  // Accounting vars
   uint64_t m_bytesInQueue;
-  uint64_t m_packetsInQueue;
   bool m_hasRedStarted;
   Stats m_stats;
 
