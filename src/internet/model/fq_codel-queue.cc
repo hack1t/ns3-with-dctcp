@@ -25,7 +25,7 @@
 #include "ns3/ipv4-header.h"
 #include "ns3/ppp-header.h"
 #include <boost/functional/hash.hpp>
-#include <boost/format.hpp>
+#include <iomanip>
 
 /*
  * SFQ as implemented by Linux, not the classical version.
@@ -78,8 +78,8 @@ TypeId Fq_CoDelQueue::GetTypeId (void)
 
 Fq_CoDelQueue::Fq_CoDelQueue () :
   m_ht (),
-  psource (),
-  peturbation (psource.GetInteger(0,std::numeric_limits<std::size_t>::max()))
+  m_psource (),
+  m_peturbation (m_psource.GetInteger(0, std::numeric_limits<std::size_t>::max()))
 {
   NS_LOG_FUNCTION_NOARGS ();
   INIT_LIST_HEAD(&m_new_flows);
@@ -96,23 +96,20 @@ Fq_CoDelQueue::hash(Ptr<Packet> p)
 {
   boost::hash<std::string> string_hash;
 
-  Ptr<Packet> q = p->Copy();
+  Ptr<Header> ip_hd;
+  p->GetIpHeader(ip_hd);
 
-  class PppHeader ppp_hd;
-
-  q->RemoveHeader(ppp_hd);
-
-  class Ipv4Header ip_hd;
-  if (q->PeekHeader (ip_hd))
-    {
-      if (pcounter > m_peturbInterval)
-        peturbation = psource.GetInteger(0,std::numeric_limits<std::size_t>::max());
-      std::size_t h = (string_hash((format("%x%x%x%x")
-                                    % (ip_hd.GetDestination().Get())
-                                    % (ip_hd.GetSource().Get())
-                                    % (ip_hd.GetProtocol())
-                                    % (peturbation)).str())
-                       & 0x2ff);
+  if (!!ip_hd)
+       {
+      if (m_pcounter > m_peturbInterval)
+        {
+          m_peturbation = m_psource.GetInteger(0,std::numeric_limits<std::size_t>::max());
+        }
+      std::stringstream oss;
+      oss << ip_hd->HashString();
+      oss << std::hex << std::setfill('0') << std::setw(8);
+      oss << m_peturbation;
+      std::size_t h = (string_hash(oss.str()) & 0x2ff);
       return h;
     }
   else
@@ -136,7 +133,7 @@ Fq_CoDelQueue::DoEnqueue (Ptr<Packet> p)
       NS_LOG_DEBUG ("fq_codel enqueue Create queue " << h);
       m_ht[h] = new Fq_CoDelSlot ();
       slot = m_ht[h];
-      slot->q->backlog = &backlog;
+      slot->q->backlog = &m_backlog;
       slot->h = h;
     }
   else
@@ -149,7 +146,7 @@ Fq_CoDelQueue::DoEnqueue (Ptr<Packet> p)
   if (queued)
     {
       slot->backlog += p->GetSize();
-      backlog += p->GetSize();
+      m_backlog += p->GetSize();
 
       if (list_empty(&slot->flowchain)) {
         NS_LOG_DEBUG ("fq_codel enqueue inactive queue "<<h);
@@ -206,7 +203,7 @@ begin:
 
   flow->deficit -= p->GetSize();
   flow->backlog -= p->GetSize();
-  backlog -= p->GetSize();
+  m_backlog -= p->GetSize();
 
   return p;
 }

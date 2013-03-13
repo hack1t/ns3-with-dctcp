@@ -23,6 +23,7 @@
 #include "ns3/log.h"
 #include "ns3/header.h"
 #include "ipv4-header.h"
+#include <iomanip>
 
 NS_LOG_COMPONENT_DEFINE ("Ipv4Header");
 
@@ -444,6 +445,19 @@ void
 Ipv4Header::SetCongested (void)
 {
   SetEcn (CE);
+}
+
+std::string
+Ipv4Header::HashString (void) const
+{
+  std::stringstream oss;
+  oss << std::hex << std::setfill('0');
+  oss << std::setw(8) << GetDestination().Get();
+  oss << std::setw(8) << GetSource().Get();
+
+  oss << std::setw(1) << (uint32_t)GetProtocol();
+
+  return oss.str();
 }
 
 } // namespace ns3

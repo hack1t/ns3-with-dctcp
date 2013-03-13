@@ -70,9 +70,9 @@ private:
   uint32_t m_buckets;
   uint32_t m_peturbInterval;
   bool m_headmode;
-  mutable size_t pcounter;
-  UniformVariable psource;
-  mutable uint32_t peturbation;
+  size_t m_pcounter;
+  UniformVariable m_psource;
+  uint32_t m_peturbation;
   uint32_t m_quantum;
 };
 

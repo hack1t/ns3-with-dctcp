@@ -118,6 +118,14 @@ public:
    * with its version.
    */
   virtual uint8_t GetPrecedence (void) const { return 0; }
+
+  /**
+   * This method is used for SFQ
+   *
+   * IP headers must override this method so they would be
+   * queued in to the right queue
+   */
+  virtual std::string HashString (void) const { return ""; }
 };
 
 std::ostream & operator << (std::ostream &os, const Header &header);

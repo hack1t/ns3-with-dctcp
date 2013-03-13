@@ -25,7 +25,7 @@
 #include "ns3/ipv4-header.h"
 #include "ns3/ppp-header.h"
 #include <boost/functional/hash.hpp>
-#include <boost/format.hpp>
+#include <iomanip>
 
 /*
  * SFQ as implemented by Linux, not the classical version.
@@ -81,8 +81,8 @@ TypeId SfqQueue::GetTypeId (void)
 SfqQueue::SfqQueue () :
   m_ht (),
   m_flows(),
-  psource (),
-  peturbation (psource.GetInteger(0,std::numeric_limits<std::size_t>::max()))
+  m_psource (),
+  m_peturbation (m_psource.GetInteger(0,std::numeric_limits<std::size_t>::max()))
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -97,22 +97,20 @@ SfqQueue::hash(Ptr<Packet> p)
 {
   boost::hash<std::string> string_hash;
 
-  Ptr<Packet> q = p->Copy();
+  Ptr<Header> ip_hd;
+  p->GetIpHeader(ip_hd);
 
-  class PppHeader ppp_hd;
-
-  q->RemoveHeader(ppp_hd);
-
-  class Ipv4Header ip_hd;
-  if (q->PeekHeader (ip_hd))
-    {
-      if (pcounter > m_peturbInterval)
-        peturbation = psource.GetInteger(0,std::numeric_limits<std::size_t>::max());
-      std::size_t h = (string_hash((format("%x%x%d")
-                                    % (ip_hd.GetDestination().Get())
-                                    % (ip_hd.GetSource().Get())
-                                    % (peturbation)).str())
-                       & 0x2ff);
+  if (!!ip_hd)
+       {
+      if (m_pcounter > m_peturbInterval)
+        {
+          m_peturbation = m_psource.GetInteger(0,std::numeric_limits<std::size_t>::max());
+        }
+      std::stringstream oss;
+      oss << ip_hd->HashString();
+      oss << std::hex << std::setfill('0') << std::setw(8);
+      oss << m_peturbation;
+      std::size_t h = (string_hash(oss.str()) & 0x2ff);
       return h;
     }
   else

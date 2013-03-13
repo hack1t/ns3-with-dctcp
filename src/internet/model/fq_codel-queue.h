@@ -67,19 +67,18 @@ private:
   virtual Ptr<const Packet> DoPeek (void) const;
 
   std::size_t hash(Ptr<Packet> p);
-  // only mutable so we can get a reference out of here in Peek()
-  mutable std::map<int, Fq_CoDelSlot * > m_ht;
+  std::map<int, Fq_CoDelSlot * > m_ht;
   mutable struct list_head m_new_flows;
   mutable struct list_head m_old_flows;
   uint32_t m_divisor;
   uint32_t m_buckets;
   uint32_t m_peturbInterval;
   bool m_headmode;
-  mutable size_t pcounter;
-  UniformVariable psource;
-  mutable uint32_t peturbation;
+  mutable size_t m_pcounter;
+  UniformVariable m_psource;
+  mutable uint32_t m_peturbation;
   uint32_t m_quantum;
-  uint32_t backlog;
+  uint32_t m_backlog;
 };
 
 } // namespace ns3

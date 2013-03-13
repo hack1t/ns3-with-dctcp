@@ -230,6 +230,7 @@ public:
   virtual uint32_t Deserialize (Buffer::Iterator start);
   virtual bool IsCongestionAware(void) const;
   virtual void SetCongested (void);
+  virtual std::string HashString (void) const;
 private:
 
   enum FlagsE {
