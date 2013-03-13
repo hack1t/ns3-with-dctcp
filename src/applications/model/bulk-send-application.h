@@ -92,6 +92,7 @@ private:
   uint32_t        m_totBytes;     // Total bytes sent so far
   TypeId          m_tid;
   TracedCallback<Ptr<const Packet> > m_txTrace;
+  TracedCallback<Ptr<Socket> > m_txTraceSource;
 
 private:
   void ConnectionSucceeded (Ptr<Socket> socket);

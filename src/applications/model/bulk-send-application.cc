@@ -65,6 +65,8 @@ BulkSendApplication::GetTypeId (void)
                    MakeTypeIdChecker ())
     .AddTraceSource ("Tx", "A new packet is created and is sent",
                      MakeTraceSourceAccessor (&BulkSendApplication::m_txTrace))
+    .AddTraceSource ("SocketCreateTrace", "Socket was created",
+                      MakeTraceSourceAccessor (&BulkSendApplication::m_txTraceSource))
   ;
   return tid;
 }
@@ -126,6 +128,7 @@ void BulkSendApplication::StartApplication (void) // Called at time specified by
                           "In other words, use TCP instead of UDP.");
         }
 
+      m_txTraceSource (m_socket);
       m_socket->Bind ();
       m_socket->Connect (m_peer);
       m_socket->ShutdownRecv ();
