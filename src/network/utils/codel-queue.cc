@@ -106,6 +106,17 @@ CoDelQueue::CoDelTime& CoDelQueue::CoDelTime::operator +=(const CoDelQueue::CoDe
   return *this;
 }
 
+CoDelQueue::CoDelTime CoDelQueue::CoDelTime::operator *(double rhs) const
+{
+  return CoDelTime(m_time * rhs);
+}
+
+CoDelQueue::CoDelTime& CoDelQueue::CoDelTime::operator *=(double rhs)
+{
+  m_time *= rhs;
+  return *this;
+}
+
 CoDelQueue::CoDelTime CoDelQueue::CoDelTime::operator -(const CoDelQueue::CoDelTime& rhs) const
 {
   return CoDelTime(m_time - rhs.m_time);
@@ -196,8 +207,13 @@ TypeId CoDelQueue::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("Interval",
                    "The CoDel algorithm interval",
-                   StringValue ("100ms"),
+                   TimeValue (Time("100ms")),
                    MakeTimeAccessor (&CoDelQueue::SetInterval),
+                   MakeTimeChecker ())
+    .AddAttribute ("ECNInterval",
+                   "The CoDel algorithm interval",
+                   TimeValue (Time(0)),
+                   MakeTimeAccessor (&CoDelQueue::SetECNInterval),
                    MakeTimeChecker ())
     .AddAttribute ("Target",
                    "The CoDel algorithm target queue delay",
@@ -211,7 +227,7 @@ TypeId CoDelQueue::GetTypeId (void)
                    MakeTimeChecker ())
     .AddAttribute ("TargetRatio",
                    "The ECN target queue delay",
-                   DoubleValue (0.8),
+                   DoubleValue (0.7),
                    MakeDoubleAccessor (&CoDelQueue::m_TargetRatio),
                    MakeDoubleChecker<double> (0, 1))
     .AddAttribute ("OPD",
@@ -223,7 +239,7 @@ TypeId CoDelQueue::GetTypeId (void)
                    "Which ECN marking mode to use",
                    EnumValue (NO_ECN),
                    MakeEnumAccessor (&CoDelQueue::m_dropMode),
-                   MakeEnumChecker (NO_ECN, "NoECN",
+                   MakeEnumChecker (NO_ECN, "NoEcn",
                                     ECN_THEN_DROP, "EcnThenDrop",
                                     DROP_AND_ECN, "DropAndEcn",
                                     DROP_THEN_ECN, "DropThenEcn"))
@@ -233,9 +249,9 @@ TypeId CoDelQueue::GetTypeId (void)
     .AddTraceSource("dropCount",
                     "CoDel drop count",
                     MakeTraceSourceAccessor(&CoDelQueue::m_dropCount))
-    // .AddTraceSource("bytesInQueue",
-    //                 "Number of bytes in the queue",
-    //                 MakeTraceSourceAccessor(&CoDelQueue::m_bytesInQueue))
+    .AddTraceSource("ECNCount",
+                    "CoDel ECN mark count",
+                    MakeTraceSourceAccessor(&CoDelQueue::m_ECNCount))
   ;
 
   return tid;
@@ -247,17 +263,14 @@ CoDelQueue::CoDelQueue () :
   m_maxBytes(),
   m_bytesInQueue(0),
   backlog(&m_bytesInQueue),
-  m_lastcount(0),
   m_count(0),
+  m_lastCount(0),
   m_dropCount(0),
   m_dropping(false),
   m_recInvSqrt(~0U >> REC_INV_SQRT_SHIFT),
   m_firstAboveTime(Time(0)),
+  m_firstAboveECNTime(Time(0)),
   m_dropNext(Time(0)),
-  m_state1(0),
-  m_state2(0),
-  m_state3(0),
-  m_states(0),
   m_dropOverlimit(0)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -324,6 +337,19 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
 
+  //Initialize ECN Target
+  if (m_TargetRatio > 0 && m_ECNTarget == Time(0))
+    {
+      m_ECNTarget = Time::FromDouble(m_Target.ToDouble(Time::NS) * m_TargetRatio, Time::NS);
+    }
+  if (m_TargetRatio > 0 && m_ECNInterval == Time(0))
+    {
+      m_ECNInterval = m_Interval * m_TargetRatio;
+    }
+  m_TargetRatio = -1;
+  NS_ASSERT(m_ECNTarget <= m_Target);
+  NS_ASSERT(m_ECNInterval <= m_Interval);
+
   if ((m_mode == PACKETS && (m_packets.size () + 1 >= m_maxPackets)) ||
         (m_mode == BYTES && (m_bytesInQueue + p->GetSize () >= m_maxBytes)))
     {
@@ -352,24 +378,64 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
   return true;
 }
 
+void
+CoDelQueue::SetInterval(Time time)
+{
+  m_Interval = time;
+}
+
+void
+CoDelQueue::SetECNInterval(Time time)
+{
+  m_ECNInterval = time;
+}
+
 bool
 CoDelQueue::ShouldDrop(Ptr<Packet> p, const CoDelQueue::CoDelTime& now)
 {
   CoDelTimestampTag tag;
+  bool drop = false;
 
   p->PeekPacketTag (tag);
   Time delta = Simulator::Now () - tag.GetTxTime ();
   NS_LOG_INFO ("Sojourn time " << delta.GetSeconds ());
-  CoDelQueue::CoDelTime sojourn_time(delta);
+  CoDelQueue::CoDelTime sojournTime(delta);
 
-  if (sojourn_time < CoDelTime(m_Target) || m_bytesInQueue < m_minbytes)
+  if (m_dropMode == DROP_AND_ECN)
+    {
+      if (sojournTime < CoDelQueue::CoDelTime(m_ECNTarget) || m_bytesInQueue < m_minbytes)
+        {
+          /* went below so we'll stay below for at least q->interval */
+          m_firstAboveECNTime = Time(0);
+        }
+      else if (m_firstAboveECNTime == Time(0))
+        {
+          /* just went above from below. If we stay above
+           * for at least q->interval we'll say it's ok to drop
+           */
+          m_firstAboveECNTime = now + m_ECNInterval;
+        }
+      else if (now > m_firstAboveECNTime)
+        {
+          bool marked = CoDelMarkPacket(p);
+          if (!marked)
+            {
+              drop = true;
+            }
+        }
+    }
+
+  if (sojournTime < CoDelQueue::CoDelTime(m_Target) || m_bytesInQueue < m_minbytes)
     {
       /* went below so we'll stay below for at least q->interval */
       m_firstAboveTime = Time(0);
-      return false;
+      return drop;
     }
 
-  bool drop = false;
+  if (m_dropMode == DROP_THEN_ECN)
+    {
+      CoDelMarkPacket(p);
+    }
 
   if (m_firstAboveTime == Time(0))
     {
@@ -381,7 +447,6 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, const CoDelQueue::CoDelTime& now)
   else if (now > m_firstAboveTime)
     {
       drop = true;
-      ++m_state1;
     }
 
   return drop;
@@ -394,7 +459,7 @@ CoDelQueue::CoDelDoDequeue (Ptr<Packet>& p, const CoDelQueue::CoDelTime& now)
     {
       m_dropping = false;
       m_firstAboveTime = Time(0);
-      ++m_states;
+      m_firstAboveECNTime = Time(0);
       NS_LOG_LOGIC ("Queue empty");
       return 0;
     }
@@ -407,6 +472,22 @@ CoDelQueue::CoDelDoDequeue (Ptr<Packet>& p, const CoDelQueue::CoDelTime& now)
   NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
   return ShouldDrop(p, now);
+}
+
+bool
+CoDelQueue::CoDelMarkPacket (Ptr<Packet> &p)
+{
+  Ptr<Header> ipHdr;
+  bool marked = false;
+  uint32_t offset = p->GetIpHeader(ipHdr);
+  if (!!ipHdr && ipHdr->IsCongestionAware())
+    {
+      ipHdr->SetCongested();
+      p->ReplaceHeader(ipHdr, offset);
+      m_ECNCount++;
+      marked = true;
+    }
+  return marked;
 }
 
 Ptr<Packet>
@@ -427,7 +508,6 @@ CoDelQueue::DoDequeue (void)
         }
       else if (now >= m_dropNext)
         {
-          m_state2++;
           /* It's time for the next drop. Drop the current
            * packet and dequeue the next. The dequeue might
            * take us out of dropping state.
@@ -436,14 +516,23 @@ CoDelQueue::DoDequeue (void)
            * that the next drop should happen now,
            * hence the while loop.
            */
-          while (m_dropping && now >= m_dropNext)
+          bool marked = false;
+          while (m_dropping && now >= m_dropNext && !marked)
             {
-              Drop(p, true);
-              ++m_dropCount;
-              ++m_count;
-              NewtonStep();
+              if (m_dropMode == ECN_THEN_DROP)
+                {
+                  marked = CoDelMarkPacket(p);
+                }
 
-              drop = CoDelDoDequeue(p, now);
+              if (!marked)
+                {
+                  Drop(p, true);
+                  ++m_dropCount;
+                  ++m_count;
+                  NewtonStep();
+
+                  drop = CoDelDoDequeue(p, now);
+                }
 
               if (!drop)
                 {
@@ -458,21 +547,29 @@ CoDelQueue::DoDequeue (void)
             }
         }
     }
-  else if (drop && ((now - m_dropNext) < m_Interval ||
-                      (now - m_firstAboveTime) >= m_Interval))
+  else if (drop &&
+              ((now - m_dropNext) < m_Interval || (now - m_firstAboveTime) >= m_Interval))
     {
-      Drop(p, true);
-      ++m_dropCount;
-      drop = CoDelDoDequeue(p, now);
+      bool marked = false;
+      if (m_dropMode == ECN_THEN_DROP)
+        {
+          marked = CoDelMarkPacket(p);
+        }
+
+      if (!marked)
+        {
+          Drop(p, true);
+          ++m_dropCount;
+          drop = CoDelDoDequeue(p, now);
+        }
       m_dropping = true;
 
-      ++m_state3;
       /*
        * if min went above target close to when we last went below it
        * assume that the drop rate that controlled the queue on the
        * last cycle is a good starting point to control it now.
        */
-      int delta = m_count - m_lastcount;
+      uint32_t delta = m_count - m_lastCount;
       if (delta > 1 && (now - m_dropNext) > m_Interval)
         {
           m_count = delta;
@@ -483,11 +580,10 @@ CoDelQueue::DoDequeue (void)
           m_count = 1;
           m_recInvSqrt = ~0U >> REC_INV_SQRT_SHIFT;
         }
-      m_lastcount = m_count;
+      m_lastCount = m_count;
       m_dropNext = ControlLaw(now);
     }
 
-  ++m_states;
   if (!!p)
     {
       CoDelTimestampTag tag;

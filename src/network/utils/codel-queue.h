@@ -86,6 +86,8 @@ class CoDelQueue : public Queue {
 
     CoDelTime operator +(const CoDelTime& rhs) const;
     CoDelTime& operator +=(const CoDelTime& rhs);
+    CoDelTime operator *(double rhs) const;
+    CoDelTime& operator *=(double rhs);
     CoDelTime operator -(const CoDelTime& rhs) const;
     CoDelTime& operator -=(const CoDelTime& rhs);
 
@@ -142,13 +144,15 @@ public:
 
   uint32_t GetQueueSize (void);
 
-  void SetInterval(Time time) { m_Interval = time; }
+  void SetInterval(Time time);
+  void SetECNInterval(Time time);
 
 private:
   bool DropOldest (Ptr<Packet> p);
   virtual bool DoEnqueue (Ptr<Packet> p);
   virtual Ptr<Packet> DoDequeue (void);
   bool CoDelDoDequeue (Ptr<Packet>& p, const CoDelTime& now);
+  bool CoDelMarkPacket (Ptr<Packet>& p);
   virtual Ptr<const Packet> DoPeek (void) const;
   void NewtonStep(void);
   CoDelTime ControlLaw(CoDelTime t);
@@ -161,21 +165,20 @@ private:
   uint64_t *backlog;
   uint32_t m_minbytes;
   CoDelTime m_Interval;
+  CoDelTime m_ECNInterval;
   Time m_Target;
   Time m_ECNTarget;
   double m_TargetRatio; /* m_Target / m_ECNTarget = m_TargetRatio */
   bool m_OPD;
-  uint32_t m_lastcount;
   TracedValue<uint32_t> m_count;
+  uint32_t m_lastCount;
   TracedValue<uint32_t> m_dropCount;
+  TracedValue<uint32_t> m_ECNCount;
   bool m_dropping;
   uint16_t m_recInvSqrt;
   CoDelTime m_firstAboveTime;
+  CoDelTime m_firstAboveECNTime;
   CoDelTime m_dropNext;
-  uint32_t m_state1;
-  uint32_t m_state2;
-  uint32_t m_state3;
-  uint32_t m_states;
   uint64_t m_dropOverlimit;
   Mode     m_mode;
   DropMode m_dropMode;
