@@ -282,11 +282,11 @@ void RttEstimator::ResetMultiplier ()
   m_multiplier = 1;
 }
 
-void RttEstimator::Reset ()
+void RttEstimator::Reset (SequenceNumber32 seq)
 {
   NS_LOG_FUNCTION (this);
   // Reset to initial state
-  m_next = 1;
+  m_next = seq;
   m_currentEstimatedRtt = m_initialEstimatedRtt;
   m_history.clear ();         // Remove all info from the history
   m_nSamples = 0;
@@ -372,12 +372,12 @@ Ptr<RttEstimator> RttMeanDeviation::Copy () const
   return CopyObject<RttMeanDeviation> (this);
 }
 
-void RttMeanDeviation::Reset ()
+void RttMeanDeviation::Reset (SequenceNumber32 seq)
 {
   NS_LOG_FUNCTION (this);
   // Reset to initial state
   m_variance = Seconds (0);
-  RttEstimator::Reset ();
+  RttEstimator::Reset (seq);
 }
 void RttMeanDeviation::Gain (double g)
 {

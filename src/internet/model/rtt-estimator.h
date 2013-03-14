@@ -119,7 +119,7 @@ public:
   /**
    * \brief Resets the estimation to its initial state.
    */
-  virtual void Reset ();
+  virtual void Reset (SequenceNumber32 seq);
 
   /**
    * \brief Sets the Minimum RTO.
@@ -168,6 +168,11 @@ public:
    * \return number of bytes sent
    */
   uint64_t GetBytesSent (void) const;
+
+  void SetExpectedNextSeq(SequenceNumber32 seq)
+  {
+    m_next = seq;
+  }
 
 private:
   SequenceNumber32 m_next;    // Next expected sequence to be sent
@@ -223,7 +228,7 @@ public:
   /**
    * \brief Resets sthe estimator.
    */
-  virtual void Reset ();
+  virtual void Reset (SequenceNumber32 seq);
 
   /**
    * \brief Sets the estimator Gain.

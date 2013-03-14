@@ -267,6 +267,7 @@ TcpSocketBase::SetRtt (Ptr<RttEstimator> rtt)
 {
   m_rtt = rtt;
   m_rtt->SetG(m_g);
+  m_rtt->SetExpectedNextSeq(m_nextTxSequence + 1);
 }
 
 /** Inherit from Socket class: Returns error code */
@@ -455,7 +456,7 @@ TcpSocketBase::Connect (const Address & address)
     }
 
   // Re-initialize parameters in case this socket is being reused after CLOSE
-  m_rtt->Reset ();
+  m_rtt->Reset (m_nextTxSequence + 1);
   m_cnCount = m_cnRetries;
   if (m_deadline != Time (0))
     {
