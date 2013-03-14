@@ -277,17 +277,19 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
   bool drop;
   p->PeekPacketTag (tag);
   Time delta = Simulator::Now () - tag.GetTxTime ();
-  NS_LOG_INFO ("Sojourn time "<<delta.GetSeconds ());
+  NS_LOG_INFO ("Sojourn time " << delta.GetSeconds ());
   codel_time_t sojourn_time = TIME2CODEL(delta);
 
   if (codel_time_before(sojourn_time, TIME2CODEL(m_Target)) ||
-      *backlog < m_minbytes)
+        *backlog < m_minbytes)
     {
       /* went below so we'll stay below for at least q->interval */
       m_first_above_time = 0;
       return false;
     }
+
   drop = false;
+
   if (m_first_above_time == 0)
     {
       /* just went above from below. If we stay above
@@ -295,14 +297,12 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
        */
       m_first_above_time = now + TIME2CODEL(m_Interval);
     }
-  else
-    if (codel_time_after(now, m_first_above_time))
-      {
-        drop = true;
-        ++m_state1;
-      }
-  if (!drop)
-    Drop (p);
+  else if (codel_time_after(now, m_first_above_time))
+    {
+      drop = true;
+      ++m_state1;
+    }
+
   return drop;
 }
 
@@ -335,21 +335,19 @@ CoDelQueue::DoDequeue (void)
           /* sojourn time below target - leave dropping state */
           m_dropping = false;
         }
-      else
-        if (codel_time_after_eq(now, m_drop_next))
-          {
-            m_state2++;
-            /* It's time for the next drop. Drop the current
-             * packet and dequeue the next. The dequeue might
-             * take us out of dropping state.
-             * If not, schedule the next drop.
-             * A large backlog might result in drop rates so high
-             * that the next drop should happen now,
-             * hence the while loop.
-             */
-            while (m_dropping &&
-                   codel_time_after_eq(now, m_drop_next)) {
-              Drop(p);
+      else if (codel_time_after_eq(now, m_drop_next))
+        {
+          m_state2++;
+          /* It's time for the next drop. Drop the current
+           * packet and dequeue the next. The dequeue might
+           * take us out of dropping state.
+           * If not, schedule the next drop.
+           * A large backlog might result in drop rates so high
+           * that the next drop should happen now,
+           * hence the while loop.
+           */
+          while (m_dropping && codel_time_after_eq(now, m_drop_next)) {
+              Drop(p, true);
               ++m_drop_count;
               ++m_count;
               NewtonStep();
@@ -378,41 +376,42 @@ CoDelQueue::DoDequeue (void)
                   /* and schedule the next drop */
                   m_drop_next = ControlLaw(m_drop_next);
                 }
-            }
           }
+        }
     }
   else if (drop && (codel_time_before(now - m_drop_next, TIME2CODEL(m_Interval)) ||
-                     codel_time_after_eq(now - m_first_above_time, TIME2CODEL(m_Interval))))
-      {
-        ++m_drop_count;
+                      codel_time_after_eq(now - m_first_above_time, TIME2CODEL(m_Interval))))
+    {
+      Drop(p, true);
+      ++m_drop_count;
 
-        NS_LOG_LOGIC ("Popped " << p);
-        NS_LOG_LOGIC ("Number packets " << m_packets.size ());
-        NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
+      NS_LOG_LOGIC ("Popped " << p);
+      NS_LOG_LOGIC ("Number packets " << m_packets.size ());
+      NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
-        drop = ShouldDrop(p, now);
-        m_dropping = true;
-        ++m_state3;
-        /*
-         * if min went above target close to when we last went below it
-         * assume that the drop rate that controlled the queue on the
-         * last cycle is a good starting point to control it now.
-         */
-        int delta = m_count - m_lastcount;
-        if (delta > 1 && codel_time_after(now - m_drop_next, TIME2CODEL(m_Interval)))
-          {
-            m_count = delta;
-            NewtonStep();
-          }
-        else
-          {
-            m_count = 1;
-            m_rec_inv_sqrt = ~0U >> REC_INV_SQRT_SHIFT;
-          }
-        m_lastcount = m_count;
-        m_drop_next = ControlLaw(now);
-        p = NULL;
-      }
+      m_dropping = true;
+      ++m_state3;
+      /*
+       * if min went above target close to when we last went below it
+       * assume that the drop rate that controlled the queue on the
+       * last cycle is a good starting point to control it now.
+       */
+      int delta = m_count - m_lastcount;
+      if (delta > 1 && codel_time_after(now - m_drop_next, TIME2CODEL(m_Interval)))
+        {
+          m_count = delta;
+          NewtonStep();
+        }
+      else
+        {
+          m_count = 1;
+          m_rec_inv_sqrt = ~0U >> REC_INV_SQRT_SHIFT;
+        }
+      m_lastcount = m_count;
+      m_drop_next = ControlLaw(now);
+      p = NULL;
+    }
+
   ++m_states;
   if (!!p)
     {

@@ -154,10 +154,7 @@ Fq_CoDelQueue::DoEnqueue (Ptr<Packet> p)
         slot->deficit = m_quantum;
       }
     }
-  else
-    {
-      Drop (p);
-    }
+
   NS_LOG_DEBUG ("fq_codel enqueue "<<slot->h<<" "<<queued);
   return queued;
 }
