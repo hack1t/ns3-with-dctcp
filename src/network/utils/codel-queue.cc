@@ -35,99 +35,138 @@ NS_LOG_COMPONENT_DEFINE ("CoDelQueue");
 
 namespace ns3 {
 
-#define BITS_PER_LONG (8 * sizeof (unsigned long))
+NS_OBJECT_ENSURE_REGISTERED (CoDelQueue);
+NS_OBJECT_ENSURE_REGISTERED (CoDelTimestampTag);
 
-/* borrowed from the linux kernel */
-#define do_div(n,base)						\
-({								\
-	int __res;						\
-	__res = ((unsigned long)n) % (unsigned int)base;	\
-	n = ((unsigned long)n) / (unsigned int)base;		\
-	__res;							\
-})
-
-static inline uint32_t reciprocal_divide(uint32_t A, uint32_t R)
+static inline uint32_t reciprocalDivide(uint32_t A, uint32_t R)
 {
 	return (uint32_t)(((uint64_t)A * R) >> 32);
 }
 
-/* end kernel borrowings */
 
-static codel_time_t codel_get_time(void)
+int32_t
+CoDelQueue::CoDelTime::Time2CodelTime(const Time& time)
 {
-  Time time = Simulator::Now ();
-  uint64_t ns = time.GetNanoSeconds ();
-
-  return ns >> CODEL_SHIFT;
+  return time.GetNanoSeconds() >> CODEL_SHIFT;
 }
 
-#define codel_time_after(a, b)	 ((int)(a) - (int)(b) > 0)
-#define codel_time_after_eq(a, b) ((int)(a) - (int)(b) >= 0)
-#define codel_time_before(a, b)	 ((int)(a) - (int)(b) < 0)
-#define codel_time_before_eq(a, b) ((int)(a) - (int)(b) <= 0)
+CoDelQueue::CoDelTime::CoDelTime()
+  :m_time(Time2CodelTime(Simulator::Now()))
+{
+}
 
-#define NSEC_PER_MSEC 1000000
-#define NSEC_PER_USEC 1000
-#define MS2TIME(a) ((a * NSEC_PER_MSEC) >> CODEL_SHIFT)
-#define US2TIME(a) ((a * NSEC_PER_USEC) >> CODEL_SHIFT)
-#define NS2TIME(a) ((a) >> CODEL_SHIFT)
-#define TIME2CODEL(a) NS2TIME(a.GetNanoSeconds())
+CoDelQueue::CoDelTime::CoDelTime(const Time &time)
+  :m_time(Time2CodelTime(time))
+{
+}
 
-#define DEFAULT_CODEL_LIMIT 1000
+CoDelQueue::CoDelTime::CoDelTime(int32_t time)
+  :m_time(time)
+{
+}
 
+bool CoDelQueue::CoDelTime::operator >(const CoDelQueue::CoDelTime& rhs) const
+{
+  return m_time > rhs.m_time;
+}
 
-CoDelQueue::CoDelTimestampTag::CoDelTimestampTag ()
-  : m_creationTime (Simulator::Now ().GetTimeStep ())
+bool CoDelQueue::CoDelTime::operator >=(const CoDelQueue::CoDelTime& rhs) const
+{
+  return m_time >= rhs.m_time;
+}
+
+bool CoDelQueue::CoDelTime::operator <(const CoDelQueue::CoDelTime& rhs) const
+{
+  return m_time < rhs.m_time;
+}
+
+bool CoDelQueue::CoDelTime::operator <=(const CoDelQueue::CoDelTime& rhs) const
+{
+  return m_time <= rhs.m_time;
+}
+
+bool CoDelQueue::CoDelTime::operator ==(const CoDelQueue::CoDelTime& rhs) const
+{
+  return m_time == rhs.m_time;
+}
+
+bool CoDelQueue::CoDelTime::operator !=(const CoDelQueue::CoDelTime& rhs) const
+{
+  return m_time != rhs.m_time;
+}
+
+CoDelQueue::CoDelTime CoDelQueue::CoDelTime::operator +(const CoDelQueue::CoDelTime& rhs) const
+{
+  return CoDelTime(m_time + rhs.m_time);
+}
+
+CoDelQueue::CoDelTime& CoDelQueue::CoDelTime::operator +=(const CoDelQueue::CoDelTime& rhs)
+{
+  m_time += rhs.m_time;
+  return *this;
+}
+
+CoDelQueue::CoDelTime CoDelQueue::CoDelTime::operator -(const CoDelQueue::CoDelTime& rhs) const
+{
+  return CoDelTime(m_time - rhs.m_time);
+}
+
+CoDelQueue::CoDelTime& CoDelQueue::CoDelTime::operator -=(const CoDelQueue::CoDelTime& rhs)
+{
+  m_time -= rhs.m_time;
+  return *this;
+}
+
+CoDelTimestampTag::CoDelTimestampTag ()
+  : m_creationTime (Simulator::Now ())
 {
 }
 
 TypeId
-CoDelQueue::CoDelTimestampTag::GetTypeId (void)
+CoDelTimestampTag::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::CoDelQueue::CoDelTimestampTag")
+  static TypeId tid = TypeId ("ns3::CoDelTimestampTag")
     .SetParent<Tag> ()
     .AddConstructor<CoDelTimestampTag> ()
-    .AddAttribute ("CreationTime",
-                   "The time at which the timestamp was created",
-                   StringValue ("0.0s"),
-                   MakeTimeAccessor (&CoDelTimestampTag::GetTxTime),
-                   MakeTimeChecker ())
   ;
   return tid;
 }
+
 TypeId
-CoDelQueue::CoDelTimestampTag::GetInstanceTypeId (void) const
+CoDelTimestampTag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint32_t
-CoDelQueue::CoDelTimestampTag::GetSerializedSize (void) const
+CoDelTimestampTag::GetSerializedSize (void) const
 {
   return 8;
 }
+
 void
-CoDelQueue::CoDelTimestampTag::Serialize (TagBuffer i) const
+CoDelTimestampTag::Serialize (TagBuffer i) const
 {
-  i.WriteU64 (m_creationTime);
-}
-void
-CoDelQueue::CoDelTimestampTag::Deserialize (TagBuffer i)
-{
-  m_creationTime = i.ReadU64 ();
-}
-void
-CoDelQueue::CoDelTimestampTag::Print (std::ostream &os) const
-{
-  os << "CreationTime=" << m_creationTime;
-}
-Time
-CoDelQueue::CoDelTimestampTag::GetTxTime (void) const
-{
-  return TimeStep (m_creationTime);
+  i.WriteDouble (m_creationTime.ToDouble(Time::NS));
 }
 
-NS_OBJECT_ENSURE_REGISTERED (CoDelQueue);
+void
+CoDelTimestampTag::Deserialize (TagBuffer i)
+{
+  m_creationTime = Time::FromDouble(i.ReadDouble (), Time::NS);
+}
+
+void
+CoDelTimestampTag::Print (std::ostream &os) const
+{
+  os << "CreationTime = " << m_creationTime;
+}
+
+Time
+CoDelTimestampTag::GetTxTime (void) const
+{
+  return m_creationTime;
+}
 
 TypeId CoDelQueue::GetTypeId (void)
 {
@@ -142,12 +181,12 @@ TypeId CoDelQueue::GetTypeId (void)
                                     PACKETS, "Packets"))
     .AddAttribute ("MaxPackets",
                    "The maximum number of packets accepted by this CoDelQueue.",
-                   UintegerValue (DEFAULT_CODEL_LIMIT),
+                   UintegerValue (1000),
                    MakeUintegerAccessor (&CoDelQueue::m_maxPackets),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MaxBytes",
                    "The maximum number of bytes accepted by this CoDelQueue.",
-                   UintegerValue (1500 * DEFAULT_CODEL_LIMIT),
+                   UintegerValue (1500 * 1000),
                    MakeUintegerAccessor (&CoDelQueue::m_maxBytes),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MinBytes",
@@ -158,24 +197,42 @@ TypeId CoDelQueue::GetTypeId (void)
     .AddAttribute ("Interval",
                    "The CoDel algorithm interval",
                    StringValue ("100ms"),
-                   MakeTimeAccessor (&CoDelQueue::m_Interval),
+                   MakeTimeAccessor (&CoDelQueue::SetInterval),
                    MakeTimeChecker ())
     .AddAttribute ("Target",
                    "The CoDel algorithm target queue delay",
-                   StringValue ("5ms"),
+                   TimeValue (Time("5ms")),
                    MakeTimeAccessor (&CoDelQueue::m_Target),
                    MakeTimeChecker ())
+    .AddAttribute ("ECNTarget",
+                   "The ECN target queue delay",
+                   TimeValue (Time(0)),
+                   MakeTimeAccessor (&CoDelQueue::m_ECNTarget),
+                   MakeTimeChecker ())
+    .AddAttribute ("TargetRatio",
+                   "The ECN target queue delay",
+                   DoubleValue (0.8),
+                   MakeDoubleAccessor (&CoDelQueue::m_TargetRatio),
+                   MakeDoubleChecker<double> (0, 1))
     .AddAttribute ("OPD",
                    "DropOldest",
                    BooleanValue (false),
                    MakeBooleanAccessor (&CoDelQueue::m_OPD),
                    MakeBooleanChecker ())
+    .AddAttribute ("EcnMode",
+                   "Which ECN marking mode to use",
+                   EnumValue (NO_ECN),
+                   MakeEnumAccessor (&CoDelQueue::m_dropMode),
+                   MakeEnumChecker (NO_ECN, "NoECN",
+                                    ECN_THEN_DROP, "EcnThenDrop",
+                                    DROP_AND_ECN, "DropAndEcn",
+                                    DROP_THEN_ECN, "DropThenEcn"))
     .AddTraceSource("count",
                     "CoDel count",
                     MakeTraceSourceAccessor(&CoDelQueue::m_count))
-    .AddTraceSource("drop_count",
+    .AddTraceSource("dropCount",
                     "CoDel drop count",
-                    MakeTraceSourceAccessor(&CoDelQueue::m_drop_count))
+                    MakeTraceSourceAccessor(&CoDelQueue::m_dropCount))
     // .AddTraceSource("bytesInQueue",
     //                 "Number of bytes in the queue",
     //                 MakeTraceSourceAccessor(&CoDelQueue::m_bytesInQueue))
@@ -192,16 +249,16 @@ CoDelQueue::CoDelQueue () :
   backlog(&m_bytesInQueue),
   m_lastcount(0),
   m_count(0),
-  m_drop_count(0),
+  m_dropCount(0),
   m_dropping(false),
-  m_rec_inv_sqrt(~0U >> REC_INV_SQRT_SHIFT),
-  m_first_above_time(0),
-  m_drop_next(0),
+  m_recInvSqrt(~0U >> REC_INV_SQRT_SHIFT),
+  m_firstAboveTime(Time(0)),
+  m_dropNext(Time(0)),
   m_state1(0),
   m_state2(0),
   m_state3(0),
   m_states(0),
-  m_drop_overlimit(0)
+  m_dropOverlimit(0)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -214,19 +271,19 @@ CoDelQueue::~CoDelQueue ()
 void
 CoDelQueue::NewtonStep(void)
 {
-  uint32_t invsqrt = ((uint32_t) m_rec_inv_sqrt) << REC_INV_SQRT_SHIFT;
-  uint32_t invsqrt2 = ((uint64_t) invsqrt*invsqrt) >> 32;
-  uint64_t val = (3ll<<32) - ((uint64_t) m_count * invsqrt2);
+  uint32_t invsqrt = ((uint32_t) m_recInvSqrt) << REC_INV_SQRT_SHIFT;
+  uint32_t invsqrt2 = ((uint64_t) invsqrt * invsqrt) >> 32;
+  uint64_t val = ((uint64_t)3 << 32) - ((uint64_t) m_count * invsqrt2);
 
   val >>= 2; /* avoid overflow */
-  val = (val * invsqrt) >> (32-2+1);
-  m_rec_inv_sqrt = val >> REC_INV_SQRT_SHIFT;
+  val = (val * invsqrt) >> (32 - 2 + 1);
+  m_recInvSqrt = val >> REC_INV_SQRT_SHIFT;
 }
 
-codel_time_t
-CoDelQueue::ControlLaw(codel_time_t t)
+CoDelQueue::CoDelTime
+CoDelQueue::ControlLaw(CoDelQueue::CoDelTime t)
 {
-  return t + reciprocal_divide(TIME2CODEL(m_Interval), m_rec_inv_sqrt << REC_INV_SQRT_SHIFT);
+  return t + reciprocalDivide(m_Interval.Get(), m_recInvSqrt << REC_INV_SQRT_SHIFT);
 }
 
 void
@@ -253,6 +310,7 @@ CoDelQueue::DropOldest (Ptr<Packet> p)
       sizeToFree -= (m_mode == BYTES) ? (int)drop->GetSize() : 1;
 
       Drop(drop, true);
+      ++m_dropOverlimit;
 
       m_bytesInQueue -= drop->GetSize ();
       m_packets.pop();
@@ -266,29 +324,14 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
 
-  if (m_mode == PACKETS && (m_packets.size () >= m_maxPackets))
+  if ((m_mode == PACKETS && (m_packets.size () + 1 >= m_maxPackets)) ||
+        (m_mode == BYTES && (m_bytesInQueue + p->GetSize () >= m_maxBytes)))
     {
-      NS_LOG_LOGIC ("Queue full (at max packets) -- dropping pkt");
+      NS_LOG_LOGIC ("Queue full -- dropping pkt");
       if (!m_OPD)
         {
           Drop (p);
-          ++m_drop_overlimit;
-          return false;
-        }
-      else
-        {
-          if (!DropOldest(p))
-            return false;
-        }
-    }
-
-  if (m_mode == BYTES && (m_bytesInQueue + p->GetSize () >= m_maxBytes))
-    {
-      NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- dropping pkt");
-      if (!m_OPD)
-        {
-          Drop (p);
-          ++m_drop_overlimit;
+          ++m_dropOverlimit;
           return false;
         }
       else
@@ -310,33 +353,32 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
 }
 
 bool
-CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
+CoDelQueue::ShouldDrop(Ptr<Packet> p, const CoDelQueue::CoDelTime& now)
 {
   CoDelTimestampTag tag;
 
   p->PeekPacketTag (tag);
   Time delta = Simulator::Now () - tag.GetTxTime ();
   NS_LOG_INFO ("Sojourn time " << delta.GetSeconds ());
-  codel_time_t sojourn_time = TIME2CODEL(delta);
+  CoDelQueue::CoDelTime sojourn_time(delta);
 
-  if (codel_time_before(sojourn_time, TIME2CODEL(m_Target)) ||
-        *backlog < m_minbytes)
+  if (sojourn_time < CoDelTime(m_Target) || m_bytesInQueue < m_minbytes)
     {
       /* went below so we'll stay below for at least q->interval */
-      m_first_above_time = 0;
+      m_firstAboveTime = Time(0);
       return false;
     }
 
   bool drop = false;
 
-  if (m_first_above_time == 0)
+  if (m_firstAboveTime == Time(0))
     {
       /* just went above from below. If we stay above
        * for at least q->interval we'll say it's ok to drop
        */
-      m_first_above_time = now + TIME2CODEL(m_Interval);
+      m_firstAboveTime = now + m_Interval;
     }
-  else if (codel_time_after(now, m_first_above_time))
+  else if (now > m_firstAboveTime)
     {
       drop = true;
       ++m_state1;
@@ -346,12 +388,12 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
 }
 
 bool
-CoDelQueue::CoDelDoDequeue (Ptr<Packet>& p, codel_time_t now)
+CoDelQueue::CoDelDoDequeue (Ptr<Packet>& p, const CoDelQueue::CoDelTime& now)
 {
   if (m_packets.empty ())
     {
       m_dropping = false;
-      m_first_above_time = 0;
+      m_firstAboveTime = Time(0);
       ++m_states;
       NS_LOG_LOGIC ("Queue empty");
       return 0;
@@ -372,7 +414,7 @@ CoDelQueue::DoDequeue (void)
 {
   NS_LOG_FUNCTION (this);
   Ptr<Packet> p;
-  codel_time_t now = codel_get_time();
+  CoDelTime now; /* default constructor creates CoDelTime for Simulator::Now() */
 
   bool drop = CoDelDoDequeue(p, now);
 
@@ -383,7 +425,7 @@ CoDelQueue::DoDequeue (void)
           /* sojourn time below target - leave dropping state */
           m_dropping = false;
         }
-      else if (codel_time_after_eq(now, m_drop_next))
+      else if (now >= m_dropNext)
         {
           m_state2++;
           /* It's time for the next drop. Drop the current
@@ -394,10 +436,10 @@ CoDelQueue::DoDequeue (void)
            * that the next drop should happen now,
            * hence the while loop.
            */
-          while (m_dropping && codel_time_after_eq(now, m_drop_next))
+          while (m_dropping && now >= m_dropNext)
             {
               Drop(p, true);
-              ++m_drop_count;
+              ++m_dropCount;
               ++m_count;
               NewtonStep();
 
@@ -411,16 +453,16 @@ CoDelQueue::DoDequeue (void)
               else
                 {
                   /* and schedule the next drop */
-                  m_drop_next = ControlLaw(m_drop_next);
+                  m_dropNext = ControlLaw(m_dropNext);
                 }
             }
         }
     }
-  else if (drop && (codel_time_before(now - m_drop_next, TIME2CODEL(m_Interval)) ||
-                      codel_time_after_eq(now - m_first_above_time, TIME2CODEL(m_Interval))))
+  else if (drop && ((now - m_dropNext) < m_Interval ||
+                      (now - m_firstAboveTime) >= m_Interval))
     {
       Drop(p, true);
-      ++m_drop_count;
+      ++m_dropCount;
       drop = CoDelDoDequeue(p, now);
       m_dropping = true;
 
@@ -431,7 +473,7 @@ CoDelQueue::DoDequeue (void)
        * last cycle is a good starting point to control it now.
        */
       int delta = m_count - m_lastcount;
-      if (delta > 1 && codel_time_after(now - m_drop_next, TIME2CODEL(m_Interval)))
+      if (delta > 1 && (now - m_dropNext) > m_Interval)
         {
           m_count = delta;
           NewtonStep();
@@ -439,10 +481,10 @@ CoDelQueue::DoDequeue (void)
       else
         {
           m_count = 1;
-          m_rec_inv_sqrt = ~0U >> REC_INV_SQRT_SHIFT;
+          m_recInvSqrt = ~0U >> REC_INV_SQRT_SHIFT;
         }
       m_lastcount = m_count;
-      m_drop_next = ControlLaw(now);
+      m_dropNext = ControlLaw(now);
     }
 
   ++m_states;

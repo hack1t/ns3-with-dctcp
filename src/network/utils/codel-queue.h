@@ -39,14 +39,30 @@
 
 namespace ns3 {
 
-typedef uint32_t codel_time_t;
 typedef uint16_t rec_inv_sqrt_t;
 
 #define CODEL_SHIFT 10
-#define REC_INV_SQRT_BITS (8*sizeof(rec_inv_sqrt_t))
+#define REC_INV_SQRT_BITS (8 * sizeof(rec_inv_sqrt_t))
 #define REC_INV_SQRT_SHIFT (32 - REC_INV_SQRT_BITS)
 
 class TraceContainer;
+
+class CoDelTimestampTag : public Tag
+{
+public:
+  CoDelTimestampTag ();
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (TagBuffer i) const;
+  virtual void Deserialize (TagBuffer i);
+  virtual void Print (std::ostream &os) const;
+
+  Time GetTxTime (void) const;
+private:
+  Time m_creationTime;
+};
 
 /**
  * \ingroup queue
@@ -54,6 +70,31 @@ class TraceContainer;
  * \brief A FIFO packet queue that drops tail-end packets on overflow
  */
 class CoDelQueue : public Queue {
+  class CoDelTime
+  {
+  public:
+    CoDelTime ();
+    CoDelTime (const Time &time);
+    CoDelTime (int32_t time);
+
+    bool operator >(const CoDelTime& rhs) const;
+    bool operator >=(const CoDelTime& rhs) const;
+    bool operator <(const CoDelTime& rhs) const;
+    bool operator <=(const CoDelTime& rhs) const;
+    bool operator ==(const CoDelTime& rhs) const;
+    bool operator !=(const CoDelTime& rhs) const;
+
+    CoDelTime operator +(const CoDelTime& rhs) const;
+    CoDelTime& operator +=(const CoDelTime& rhs);
+    CoDelTime operator -(const CoDelTime& rhs) const;
+    CoDelTime& operator -=(const CoDelTime& rhs);
+
+    int32_t Get() const { return m_time; }
+
+    static int32_t Time2CodelTime(const Time& time);
+  private:
+    int32_t m_time;
+  };
 public:
   friend class Fq_CoDelQueue;
 
@@ -77,6 +118,13 @@ public:
     BYTES,       /**< Use number of bytes for maximum queue size */
   };
 
+  enum DropMode {
+    NO_ECN,
+    ECN_THEN_DROP, /* Mark ECN bits, if it isn't ECN capable DROP */
+    DROP_AND_ECN, /* Two targets - lower for ECN and higher for DROPs */
+    DROP_THEN_ECN, /* Drop packets and in interval between dropping mark ECN bits */
+  };
+
   /**
    * Set the operating mode of this device.
    *
@@ -94,55 +142,43 @@ public:
 
   uint32_t GetQueueSize (void);
 
+  void SetInterval(Time time) { m_Interval = time; }
+
 private:
   bool DropOldest (Ptr<Packet> p);
   virtual bool DoEnqueue (Ptr<Packet> p);
   virtual Ptr<Packet> DoDequeue (void);
-  bool CoDelDoDequeue (Ptr<Packet>& p, codel_time_t now);
+  bool CoDelDoDequeue (Ptr<Packet>& p, const CoDelTime& now);
   virtual Ptr<const Packet> DoPeek (void) const;
   void NewtonStep(void);
-  codel_time_t ControlLaw(codel_time_t t);
-  bool ShouldDrop(Ptr<Packet> p, codel_time_t now);
+  CoDelTime ControlLaw(CoDelTime t);
+  bool ShouldDrop(Ptr<Packet> p, const CoDelTime& now);
 
   std::queue<Ptr<Packet> > m_packets;
-  uint32_t m_maxPackets;
-  uint32_t m_maxBytes;
-  uint32_t m_bytesInQueue;
-  uint32_t *backlog;
+  uint64_t m_maxPackets;
+  uint64_t m_maxBytes;
+  uint64_t m_bytesInQueue;
+  uint64_t *backlog;
   uint32_t m_minbytes;
-  Time m_Interval;
+  CoDelTime m_Interval;
   Time m_Target;
+  Time m_ECNTarget;
+  double m_TargetRatio; /* m_Target / m_ECNTarget = m_TargetRatio */
   bool m_OPD;
   uint32_t m_lastcount;
   TracedValue<uint32_t> m_count;
-  TracedValue<uint32_t> m_drop_count;
+  TracedValue<uint32_t> m_dropCount;
   bool m_dropping;
-  uint16_t m_rec_inv_sqrt;
-  codel_time_t m_first_above_time;
-  codel_time_t m_drop_next;
+  uint16_t m_recInvSqrt;
+  CoDelTime m_firstAboveTime;
+  CoDelTime m_dropNext;
   uint32_t m_state1;
   uint32_t m_state2;
   uint32_t m_state3;
   uint32_t m_states;
-  uint32_t m_drop_overlimit;
+  uint64_t m_dropOverlimit;
   Mode     m_mode;
-
-  class CoDelTimestampTag : public Tag
-  {
-  public:
-    CoDelTimestampTag ();
-    static TypeId GetTypeId (void);
-    virtual TypeId GetInstanceTypeId (void) const;
-
-    virtual uint32_t GetSerializedSize (void) const;
-    virtual void Serialize (TagBuffer i) const;
-    virtual void Deserialize (TagBuffer i);
-    virtual void Print (std::ostream &os) const;
-
-    Time GetTxTime (void) const;
-  private:
-    uint64_t m_creationTime;
-  };
+  DropMode m_dropMode;
 };
 
 } // namespace ns3

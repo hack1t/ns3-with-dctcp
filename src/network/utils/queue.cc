@@ -26,6 +26,7 @@ NS_LOG_COMPONENT_DEFINE ("Queue");
 namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (Queue);
+NS_OBJECT_ENSURE_REGISTERED (QueueTimestampTag);
 
 TypeId
 Queue::GetTypeId (void)
@@ -71,7 +72,7 @@ Queue::Enqueue (Ptr<Packet> p, bool tagit)
   //
   if (tagit)
     {
-      Queue::TimestampTag tag;
+      QueueTimestampTag tag;
       p->AddPacketTag (tag);
     }
   bool retval = DoEnqueue (p);
@@ -104,7 +105,7 @@ Queue::Dequeue (bool untagit)
 
       if (untagit)
         {
-          Queue::TimestampTag tag;
+          QueueTimestampTag tag;
           packet->PeekPacketTag (tag);
           m_packetJurneySum += Simulator::Now () - tag.GetTxTime ();
           packet->RemovePacketTag(tag);
@@ -158,7 +159,7 @@ Queue::GetNBytes (void) const
 Time
 Queue::GetPacketJurneyAvg (void) const
 {
-  Time jurneyAvg = Time::FromDouble(m_packetJurneySum.GetSeconds() / m_nTotalSentPackets, Time::S);
+  Time jurneyAvg = m_nTotalSentPackets ? Time::FromDouble(m_packetJurneySum.GetSeconds() / m_nTotalSentPackets, Time::S) : Time(0);
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_LOGIC (" returns " << jurneyAvg);
   return jurneyAvg;
@@ -233,49 +234,49 @@ Queue::Drop (Ptr<Packet> p, bool wasEnqueued)
   m_traceDrop (p);
 }
 
-Queue::TimestampTag::TimestampTag ()
+QueueTimestampTag::QueueTimestampTag ()
   : m_creationTime (Simulator::Now ())
 {
 }
 
 TypeId
-Queue::TimestampTag::GetTypeId (void)
+QueueTimestampTag::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::Queue::TimestampTag")
+  static TypeId tid = TypeId ("ns3::QueueTimestampTag")
     .SetParent<Tag> ()
-    .AddConstructor<TimestampTag> ()
+    .AddConstructor<QueueTimestampTag> ()
   ;
   return tid;
 }
 
 TypeId
-Queue::TimestampTag::GetInstanceTypeId (void) const
+QueueTimestampTag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint32_t
-Queue::TimestampTag::GetSerializedSize (void) const
+QueueTimestampTag::GetSerializedSize (void) const
 {
   return sizeof(double);
 }
 void
-Queue::TimestampTag::Serialize (TagBuffer i) const
+QueueTimestampTag::Serialize (TagBuffer i) const
 {
   i.WriteDouble (m_creationTime.ToDouble(Time::NS));
 }
 void
-Queue::TimestampTag::Deserialize (TagBuffer i)
+QueueTimestampTag::Deserialize (TagBuffer i)
 {
   m_creationTime = Time::FromDouble(i.ReadDouble (), Time::NS);
 }
 void
-Queue::TimestampTag::Print (std::ostream &os) const
+QueueTimestampTag::Print (std::ostream &os) const
 {
   os << "CreationTime = " << m_creationTime << " ";
 }
 Time
-Queue::TimestampTag::GetTxTime (void) const
+QueueTimestampTag::GetTxTime (void) const
 {
   return m_creationTime;
 }

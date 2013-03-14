@@ -78,7 +78,7 @@ private:
   UniformVariable m_psource;
   mutable uint32_t m_peturbation;
   uint32_t m_quantum;
-  uint32_t m_backlog;
+  uint64_t m_backlog;
 };
 
 } // namespace ns3

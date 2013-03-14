@@ -175,24 +175,24 @@ private:
   uint64_t m_nTotalDroppedBytes;
   uint64_t m_nTotalDroppedPackets;
   Time     m_packetJurneySum;
+};
 
-  // Used for TimeStamping packets
-  class TimestampTag : public Tag
-  {
-  public:
-    TimestampTag ();
-    static TypeId GetTypeId (void);
-    virtual TypeId GetInstanceTypeId (void) const;
+// Used for TimeStamping packets
+class QueueTimestampTag : public Tag
+{
+public:
+  QueueTimestampTag ();
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
 
-    virtual uint32_t GetSerializedSize (void) const;
-    virtual void Serialize (TagBuffer i) const;
-    virtual void Deserialize (TagBuffer i);
-    virtual void Print (std::ostream &os) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (TagBuffer i) const;
+  virtual void Deserialize (TagBuffer i);
+  virtual void Print (std::ostream &os) const;
 
-    Time GetTxTime (void) const;
-  private:
-    Time m_creationTime;
-  };
+  Time GetTxTime (void) const;
+private:
+  Time m_creationTime;
 };
 
 } // namespace ns3
