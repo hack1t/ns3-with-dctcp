@@ -48,6 +48,7 @@
 
 #include <boost/format.hpp>
 
+#include "ns3/callback.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -56,6 +57,8 @@
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/traced-value.h"
 #include "ns3/trace-source-accessor.h"
+#include "ns3/flow-monitor-helper.h"
+#include <iomanip>
 
 using namespace ns3;
 using namespace boost;
@@ -71,6 +74,81 @@ NS_LOG_COMPONENT_DEFINE ("TcpServer");
 // {
 //   NS_LOG_INFO ((format("Count went from %d to %d (%d)") % (v_old) % (v_new) % (((int) v_new)-((int) v_old))).str());
 // }
+
+std::string pathOut = ".";
+
+static void
+CheckQueue (std::string filePlotQueue, std::string filePlotQueueAvg, std::string filePlotJurneyAvg,
+                    double avgQueueSize, uint32_t checkTimes, Ptr<Queue> queue)
+{
+  uint32_t qSize = queue->GetNBytes ();
+
+  avgQueueSize += qSize;
+  checkTimes++;
+
+  // check queue size every 1/100 of a second
+  Simulator::Schedule (Seconds (0.01), &CheckQueue, filePlotQueue, filePlotQueueAvg, filePlotJurneyAvg, avgQueueSize, checkTimes, queue);
+
+  std::ofstream fPlotQueue (filePlotQueue.c_str (), std::ios::out|std::ios::app);
+  fPlotQueue << Simulator::Now ().GetSeconds () << " " << qSize << std::endl;
+  fPlotQueue.close ();
+
+  std::ofstream fPlotQueueAvg (filePlotQueueAvg.c_str (), std::ios::out|std::ios::app);
+  fPlotQueueAvg << Simulator::Now ().GetSeconds () << " " << avgQueueSize / checkTimes << std::endl;
+  fPlotQueueAvg.close ();
+
+  std::ofstream fPlotJurneyAvg (filePlotJurneyAvg.c_str (), std::ios::out|std::ios::app);
+  fPlotJurneyAvg << Simulator::Now ().GetSeconds () << " " << queue->GetPacketJurneyAvg().GetMilliSeconds() << "ms" << std::endl;
+  fPlotJurneyAvg.close ();
+}
+
+static void
+WriteForPlot(Ptr<NetDevice> ptrNd, std::string suffix = "")
+{
+  std::ostringstream oss;
+  oss << "tcp-qfp-";
+
+  std::string nodename;
+  std::string devicename;
+
+  Ptr<PointToPointNetDevice> nd = StaticCast<PointToPointNetDevice> (ptrNd);
+  Ptr<Node> node = nd->GetNode ();
+
+  nodename = Names::FindName (node);
+  devicename = Names::FindName (nd);
+
+  if (nodename.size ())
+    {
+      oss << nodename;
+    }
+  else
+    {
+      oss << node->GetId ();
+    }
+
+  oss << "-";
+
+  if (devicename.size ())
+    {
+      oss << devicename;
+    }
+  else
+    {
+      oss << nd->GetIfIndex ();
+    }
+
+  std::stringstream filePlotQueue, filePlotQueueAvg, filePlotQueueJourneyAvg;
+
+  filePlotQueue << pathOut << "/" << oss.str() << suffix << "-queue.plotme";
+  filePlotQueueAvg << pathOut << "/" << oss.str() << suffix << "-queue-avg.plotme";
+  filePlotQueueJourneyAvg << pathOut << "/" << oss.str() << suffix << "-queue-journey-avg.plotme";
+
+  remove (filePlotQueue.str ().c_str ());
+  remove (filePlotQueueAvg.str ().c_str ());
+  remove (filePlotQueueJourneyAvg.str().c_str());
+  Ptr<Queue> queue = nd->GetQueue ();
+  Simulator::ScheduleNow (&CheckQueue, filePlotQueue.str(), filePlotQueueAvg.str(), filePlotQueueJourneyAvg.str(), 0, 0, queue);
+}
 
 int
 main (int argc, char *argv[])
@@ -96,29 +174,36 @@ main (int argc, char *argv[])
   std::string appDataRate = "10Mbps";
   std::string bottleneckRate = "90Mbps";
   std::string CoDelInterval = "100ms";
-  std::string CoDelTarget = "5ms";
+  std::string Target = "5ms";
   std::string R1 = "10Mbps";
   std::string R2 = "25Mbps";
   std::string Q1queueType = "RED";
   std::string Q2queueType = "RED";
-  double      Q1minTh = 40;
-  double      Q1maxTh = 100;
-  uint32_t    Q1maxPackets = 100;
-  double      Q2minTh = 40;
-  double      Q2maxTh = 100;
-  uint32_t    Q2maxPackets = 100;
-  double      minTh = 60;
-  double      maxTh = 120;
+  uint32_t    Q1maxPackets = 90;
+  uint32_t    Q2maxPackets = 90;
+  uint32_t    maxPackets = 90;
+  uint32_t    pktSize = 1000;
   uint32_t    modeBytes  = 0;
   uint32_t    stack  = 0;
   uint32_t    modeGentle  = 0;
-  uint32_t    maxPackets = 200;
-  uint32_t    pktSize = 1400;
+  bool       modeAdaptive = 0;
   uint32_t    sfqheadmode = 0;
   uint32_t maxBytes = 0;
+  uint32_t quantum = 4507;
+  int appsPerInterface = 1;
   std::string queueType = "SFQ";
+  bool opd = false;
+  bool drr = false;
+  bool ecnTcp = false;
+  int noQueue = 1;
+  double wq1 = 3, wq2 = 3, wq3 = 3, wq4 = 3,
+          wq5 = 3, wq6 = 3, wq7 = 3, wq8 = 3;
 
   double AppStartTime   = 0.1001;
+  bool flowMonitor = false;
+  bool writeForPlot = false;
+  bool printSockStats = false;
+  double runTime = 30;
 
   // cubic is the default congestion algorithm in Linux 2.6.26
   std::string tcpCong = "cubic";
@@ -129,49 +214,100 @@ main (int argc, char *argv[])
   // Config::SetDefault()s at run-time, via command-line arguments
   CommandLine cmd;
   // cmd.AddValue ("appDataRate", "Set OnOff App DataRate", appDataRate);
+  cmd.AddValue ("RunTime", "Number of seconds to run", runTime);
+  cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
+  cmd.AddValue ("writeFlowMonitor", "<0/1> to enable Flow Monitor and write their results", flowMonitor);
+  cmd.AddValue ("writeForPlot", "<0/1> to enable Queue Size and Average Queue Size monitoring", writeForPlot);
+  cmd.AddValue ("printSockStats", "<0/1> to enable Socket stats monitoring", printSockStats);
   cmd.AddValue ("maxBytes",
                 "Total number of bytes for application to send", maxBytes);
+  cmd.AddValue ("Quantum", "SFQ and fq_codel quantum", quantum);
   cmd.AddValue ("queueType", "Set Queue type to CoDel, DropTail, RED, or SFQ", queueType);
   cmd.AddValue ("modeBytes", "Set RED Queue mode to Packets <0> or bytes <1>", modeBytes);
   cmd.AddValue ("stack", "Set TCP stack to NSC <0> or linux-2.6.26 <1> (warning, linux stack is really slow in the sim)", stack);
   cmd.AddValue ("modeGentle", "Set RED Queue mode to standard <0> or gentle <1>", modeBytes);
   cmd.AddValue ("maxPackets","Max Packets allowed in the queue", maxPackets);
   cmd.AddValue ("nNodes", "Number of client nodes", N);
-  cmd.AddValue ("mNodes", "Number of low latency client noodes", M);
+  cmd.AddValue ("mNodes", "Number of low latency client nodes", M);
   cmd.AddValue ("R", "Bottleneck rate", bottleneckRate);
   cmd.AddValue ("R1", "Low latency node edge link bottleneck rate", R1);
   cmd.AddValue ("Q1Type", "Set Queue type to DropTail or RED", Q1queueType);
-  cmd.AddValue ("Q1redMinTh", "RED queue minimum threshold (packets)", Q1minTh);
-  cmd.AddValue ("Q1redMaxTh", "RED queue maximum threshold (packets)", Q1maxTh);
   cmd.AddValue ("Q1maxPackets","Max Packets allowed in the queue", Q1maxPackets);
   cmd.AddValue ("R2", "High latency node edge link bottleneck rate", R2);
   cmd.AddValue ("Q2Type", "Set Queue type to DropTail or RED", Q2queueType);
-  cmd.AddValue ("Q2redMinTh", "RED queue minimum threshold (packets)", Q2minTh);
-  cmd.AddValue ("Q2redMaxTh", "RED queue maximum threshold (packets)", Q2maxTh);
   cmd.AddValue ("Q2maxPackets","Max Packets allowed in the queue", Q2maxPackets);
-  cmd.AddValue ("redMinTh", "RED queue minimum threshold (packets)", minTh);
-  cmd.AddValue ("redMaxTh", "RED queue maximum threshold (packets)", maxTh);
   cmd.AddValue ("SFQHeadMode", "New SFQ flows go to the head", sfqheadmode);
   cmd.AddValue ("Interval", "CoDel algorithm interval", CoDelInterval);
-  cmd.AddValue ("Target", "CoDel algorithm target queue delay", CoDelTarget);
+  cmd.AddValue ("Target", "Target queue delay", Target);
+  cmd.AddValue ("ECN", "Use ECN capable TCP", ecnTcp);
+  cmd.AddValue ("OPD", "Red uses Oldest Packet Drop", opd);
+  cmd.AddValue ("DRR", "Red uses Deficit Round Robin", drr);
+  cmd.AddValue ("noQueues", "Number of queues for RED with DRR (8 is max for now)", noQueue);
+  cmd.AddValue ("wq1", "DRR weight for RED queue 1", wq1);
+  cmd.AddValue ("wq2", "DRR weight for RED queue 2", wq2);
+  cmd.AddValue ("wq3", "DRR weight for RED queue 3", wq3);
+  cmd.AddValue ("wq4", "DRR weight for RED queue 4", wq4);
+  cmd.AddValue ("wq5", "DRR weight for RED queue 5", wq5);
+  cmd.AddValue ("wq6", "DRR weight for RED queue 6", wq6);
+  cmd.AddValue ("wq7", "DRR weight for RED queue 7", wq7);
+  cmd.AddValue ("wq8", "DRR weight for RED queue 8", wq8);
+  cmd.AddValue ("adaptive", "Use adaptive RED", modeAdaptive);
+  cmd.AddValue ("appsPerIf", "Number of apps per interface", appsPerInterface);
   cmd.Parse (argc, argv);
 
-  if ((queueType != "RED") && (queueType != "DropTail") && (queueType != "SFQ") && (queueType != "CoDel") && (queueType != "fq_codel"))
+  if ((queueType != "RED") && (queueType != "DropTail") && (queueType != "DropOldestQueue") && (queueType != "SFQ") && (queueType != "CoDel") && (queueType != "fq_codel"))
     {
       NS_ABORT_MSG ("Invalid queue type: Use --queueType=RED or --queueType=DropTail");
     }
-  if ((Q1queueType != "RED") && (Q1queueType != "DropTail") && (Q1queueType != "CoDel"))
+  if ((Q1queueType != "RED") && (Q1queueType != "DropTail") && (Q1queueType != "DropOldestQueue") && (Q1queueType != "CoDel"))
     {
-      NS_ABORT_MSG ("Invalid Q1 queue type: Use --queueType=RED or --queueType=DropTail");
+      NS_ABORT_MSG ("Invalid Q1 queue type: Use --queueType=RED or --queueType=DropTail or --queueType=CoDel");
     }
-  if ((Q2queueType != "RED") && (Q2queueType != "DropTail") && (Q2queueType != "CoDel"))
+  if ((Q2queueType != "RED") && (Q2queueType != "DropTail") && (Q2queueType != "DropOldestQueue") && (Q2queueType != "CoDel"))
     {
-      NS_ABORT_MSG ("Invalid Q2 queue type: Use --queueType=RED or --queueType=DropTail");
+      NS_ABORT_MSG ("Invalid Q2 queue type: Use --queueType=RED or --queueType=DropTail or --queueType=CoDel");
+    }
+  if (runTime < 20)
+    {
+      NS_ABORT_MSG ("Invalid RunTime value: RunTime must be larger then 20");
+    }
+  if (noQueue > 8 || noQueue < 1)
+    {
+      NS_ABORT_MSG ("Invalid noQueue value: noQueue must be lesser or equal to 8 and larger than 0");
+    }
+  else
+    {
+      Config::SetDefault ("ns3::RedQueue::NoQueues", UintegerValue (noQueue));
+    }
+
+  if (appsPerInterface < 1)
+    {
+      NS_ABORT_MSG ("Invalid appsPerIf value: appsPerIf must be larger than 0");
+    }
+
+  if (ecnTcp)
+    {
+      Config::SetDefault ("ns3::TcpSocketBase::ECNCapable", BooleanValue (true));
+    }
+
+  if (drr)
+    {
+      Config::SetDefault ("ns3::RedQueue::UseDRR", BooleanValue (true));
+    }
+
+  if (opd)
+    {
+      Config::SetDefault ("ns3::RedQueue::OPD", BooleanValue (true));
     }
 
   if (modeGentle)
     {
       Config::SetDefault ("ns3::RedQueue::Gentle", BooleanValue (true));
+    }
+
+  if (modeAdaptive)
+    {
+      Config::SetDefault ("ns3::RedQueue::Adaptive", BooleanValue (true));
     }
 
   if (sfqheadmode)
@@ -180,10 +316,13 @@ main (int argc, char *argv[])
     }
 
   Config::SetDefault ("ns3::SfqQueue::peturbInterval", UintegerValue(131));
+  Config::SetDefault ("ns3::SfqQueue::Quantum", UintegerValue(quantum));
+  Config::SetDefault ("ns3::Fq_CoDelQueue::Quantum", UintegerValue(quantum));
 
   Config::SetDefault ("ns3::RedQueue::LInterm", DoubleValue (50));
   if (!modeBytes)
     {
+      Config::SetDefault ("ns3::RedQueue::Mode", EnumValue (RedQueue::QUEUE_MODE_PACKETS));
       //Config::SetDefault ("ns3::DropTailQueue::Mode", StringValue ("Packets"));
       Config::SetDefault ("ns3::DropTailQueue::MaxPackets", UintegerValue (maxPackets));
       //Config::SetDefault ("ns3::RedQueue::Mode", StringValue ("Packets"));
@@ -191,29 +330,37 @@ main (int argc, char *argv[])
     }
   else
     {
+      Config::SetDefault ("ns3::RedQueue::Mode", EnumValue (RedQueue::QUEUE_MODE_BYTES));
       //Config::SetDefault ("ns3::DropTailQueue::Mode", StringValue ("Bytes"));
       Config::SetDefault ("ns3::DropTailQueue::MaxBytes", UintegerValue (maxPackets * pktSize));
       //Config::SetDefault ("ns3::RedQueue::Mode", StringValue ("Bytes"));
       Config::SetDefault ("ns3::RedQueue::QueueLimit", UintegerValue (maxPackets * pktSize));
+
+      Config::SetDefault ("ns3::RedQueue::WQ1", DoubleValue (wq1 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ2", DoubleValue (wq2 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ3", DoubleValue (wq3 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ4", DoubleValue (wq4 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ5", DoubleValue (wq5 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ6", DoubleValue (wq6 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ7", DoubleValue (wq7 * pktSize));
+      Config::SetDefault ("ns3::RedQueue::WQ8", DoubleValue (wq8 * pktSize));
+
       Q1maxPackets *= pktSize;
       Q2maxPackets *= pktSize;
-      minTh *= pktSize;
-      maxTh *= pktSize;
-      Q1minTh *= pktSize;
-      Q1maxTh *= pktSize;
-      Q2minTh *= pktSize;
-      Q2maxTh *= pktSize;
     }
 
-  Config::SetDefault ("ns3::RedQueue::MinTh", DoubleValue (minTh));
-  Config::SetDefault ("ns3::RedQueue::MaxTh", DoubleValue (maxTh));
+  Config::SetDefault ("ns3::RedQueue::MinTh", DoubleValue (0));
+  Config::SetDefault ("ns3::RedQueue::MaxTh", DoubleValue (0));
   Config::SetDefault ("ns3::RedQueue::LinkBandwidth", StringValue (bottleneckRate));
   Config::SetDefault ("ns3::RedQueue::LinkDelay", StringValue ("1ms"));
+  Config::SetDefault ("ns3::RedQueue::MeanPktSize", UintegerValue(pktSize));
+  Config::SetDefault ("ns3::RedQueue::QW", DoubleValue(-1.0));
+  Config::SetDefault ("ns3::RedQueue::TargetDelay", StringValue(Target));
 
   Config::SetDefault ("ns3::CoDelQueue::Interval", StringValue(CoDelInterval));
-  Config::SetDefault ("ns3::CoDelQueue::Target", StringValue(CoDelTarget));
+  Config::SetDefault ("ns3::CoDelQueue::Target", StringValue(Target));
 
-  Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (pktSize));
+  Config::SetDefault ("ns3::BulkSendApplication::SendSize", UintegerValue (pktSize));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (pktSize));
   Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue (appDataRate));
 
@@ -277,8 +424,8 @@ main (int argc, char *argv[])
   if (Q1queueType == "RED")
     {
       p1channel.SetQueue ("ns3::RedQueue",
-                          "MinTh", DoubleValue (Q1minTh),
-                          "MaxTh", DoubleValue (Q1maxTh),
+                          "MinTh", DoubleValue (0),
+                          "MaxTh", DoubleValue (0),
                           "LinkBandwidth", StringValue (R1),
                           "QueueLimit",  UintegerValue (Q1maxPackets));
     }
@@ -290,13 +437,18 @@ main (int argc, char *argv[])
                           "MinBytes", UintegerValue(1500)
                           );
     }
+  else if (Q1queueType == "DropOldestQueue")
+    {
+      p1channel.SetQueue ("ns3::DropOldestQueue");
+    }
+
   PointToPointHelper p2channel;
   p2channel.SetDeviceAttribute ("DataRate", StringValue (R2));
   if (Q2queueType == "RED")
     {
       p2channel.SetQueue ("ns3::RedQueue",
-                          "MinTh", DoubleValue (Q2minTh),
-                          "MaxTh", DoubleValue (Q2maxTh),
+                          "MinTh", DoubleValue (0),
+                          "MaxTh", DoubleValue (0),
                           "LinkBandwidth", StringValue (R2),
                           "QueueLimit",  UintegerValue (Q2maxPackets));
     }
@@ -308,10 +460,42 @@ main (int argc, char *argv[])
                           "MinBytes", UintegerValue(1500)
                           );
     }
+  else if (Q2queueType == "DropOldestQueue")
+    {
+      p2channel.SetQueue ("ns3::DropOldestQueue");
+    }
+
   PointToPointHelper serverchannel;
   // server links are fast
   serverchannel.SetDeviceAttribute ("DataRate", StringValue (bottleneckRate));
   serverchannel.SetChannelAttribute ("Delay", StringValue ("1ms"));
+  if (queueType == "RED")
+    {
+      serverchannel.SetQueue ("ns3::RedQueue",
+                                  "MinTh", DoubleValue (0),
+                                  "MaxTh", DoubleValue (0),
+                                  "LinkBandwidth", StringValue (bottleneckRate),
+                                  "LinkDelay", StringValue ("1ms"));
+    }
+  else if (queueType == "SFQ")
+    {
+      serverchannel.SetQueue ("ns3::SfqQueue");
+    }
+  else if (queueType == "fq_codel")
+    {
+      serverchannel.SetQueue ("ns3::Fq_CoDelQueue");
+    }
+  else if (queueType == "CoDel")
+    {
+      serverchannel.SetQueue ("ns3::CoDelQueue",
+                                  "MinBytes", UintegerValue(1500)
+                                  );
+    }
+  else if (queueType == "DropOldestQueue")
+    {
+      serverchannel.SetQueue ("ns3::DropOldestQueue");
+    }
+
   PointToPointHelper bottleneckchannel;
   // last one has different properties
   bottleneckchannel.SetDeviceAttribute ("DataRate", StringValue (bottleneckRate));
@@ -319,8 +503,8 @@ main (int argc, char *argv[])
   if (queueType == "RED")
     {
       bottleneckchannel.SetQueue ("ns3::RedQueue",
-                                  "MinTh", DoubleValue (minTh),
-                                  "MaxTh", DoubleValue (maxTh),
+                                  "MinTh", DoubleValue (0),
+                                  "MaxTh", DoubleValue (0),
                                   "LinkBandwidth", StringValue (bottleneckRate),
                                   "LinkDelay", StringValue ("1ms"));
     }
@@ -335,21 +519,23 @@ main (int argc, char *argv[])
   else if (queueType == "CoDel")
     {
       bottleneckchannel.SetQueue ("ns3::CoDelQueue",
-                                  "Interval", StringValue(CoDelInterval),
-                                  "Target", StringValue(CoDelTarget),
                                   "MinBytes", UintegerValue(1500)
                                   );
+    }
+  else if (queueType == "DropOldestQueue")
+    {
+      bottleneckchannel.SetQueue ("ns3::DropOldestQueue");
     }
 
   UniformVariable shortrtt (1,2);
   UniformVariable longrtt (160,166);
 
   // order devices are put in here ends up being numbering order
-  std::vector<NetDeviceContainer> deviceAdjacencyList (2*N+1);
-  for(uint32_t i=0; i<deviceAdjacencyList.size ()-1; ++i)
+  std::vector<NetDeviceContainer> deviceAdjacencyList (2 * N + 1);
+  for(uint32_t i = 0; i < deviceAdjacencyList.size () - 1; ++i)
     {
       // N-M clients have more bandwith but long RTT
-      if (i>(N+M-1))
+      if (i > (N + M - 1))
         {
           double rn = longrtt.GetValue ();
           p2channel.SetChannelAttribute ("Delay", StringValue ((format("%gms") % rn).str()));
@@ -359,7 +545,7 @@ main (int argc, char *argv[])
                         % Names::FindName(nodeAdjacencyList[i].Get (1))
                         % R2 % rn).str());
         }
-      else if ((i>(N-1)) && (i<(N+M-1)))
+      else if ((i > (N - 1)) && (i < (N + M - 1)))
         {
           double rn = shortrtt.GetValue ();
           p1channel.SetChannelAttribute ("Delay", StringValue ((format("%gms") % rn).str()));
@@ -375,13 +561,18 @@ main (int argc, char *argv[])
         }
     }
 
-  deviceAdjacencyList[2*N] = bottleneckchannel.Install (nodeAdjacencyList[2*N]);
+  deviceAdjacencyList[2 * N] = bottleneckchannel.Install (nodeAdjacencyList[2 * N]);
+  /* There is only sense to print queue stats for the bottleneck queue */
+  if (writeForPlot)
+    {
+      WriteForPlot(deviceAdjacencyList[2 * N].Get (0), "-bottleneck");
+    }
 
   // Later, we add IP addresses.
   NS_LOG_INFO ("Assign IP Addresses.");
   Ipv4AddressHelper ipv4;
-  std::vector<Ipv4InterfaceContainer> interfaceAdjacencyList (2*N+1);
-  for(uint32_t i=0; i<interfaceAdjacencyList.size (); ++i)
+  std::vector<Ipv4InterfaceContainer> interfaceAdjacencyList (2 * N + 1);
+  for(uint32_t i = 0; i < interfaceAdjacencyList.size (); ++i)
     {
       std::ostringstream subnet;
       subnet<<"10.1."<<i+1<<".0";
@@ -410,45 +601,87 @@ main (int argc, char *argv[])
   //on each p2p subnet
   ApplicationContainer clientApps;
   ApplicationContainer sinkApps;
-  uint16_t port = 50000;
-  Address sinkLocalAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
-  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkLocalAddress);
+  uint16_t portStart = 5000;
+  std::vector<uint16_t> port;
+  std::vector<PacketSinkHelper> sinkHelper;
+
+  for (int l = 0; l < appsPerInterface; ++l)
+    {
+      port.push_back(portStart);
+      Address sinkLocalAddress (InetSocketAddress (Ipv4Address::GetAny (), portStart));
+      sinkHelper.push_back(PacketSinkHelper("ns3::TcpSocketFactory", sinkLocalAddress));
+      portStart++;
+    }
+
+  UniformVariable x (0,1);
+  double rn;
   for(uint32_t i=0; i<clientNodes.GetN (); ++i)
     {
-      UniformVariable x (0,1);
-      double rn = x.GetValue ();
-      AddressValue remoteAddress
-        (InetSocketAddress (interfaceAdjacencyList[i].GetAddress (1), port));
-      clientHelper.SetAttribute ("Remote", remoteAddress);
-      ApplicationContainer app = clientHelper.Install (clientNodes.Get (i));
-      NS_LOG_INFO ((format("Application on device %d (%s) starting at %g") % (N+i+1)
-                    % Names::FindName(clientNodes.Get (i))
-                    % (AppStartTime+rn)).str());
-      app.Start (Seconds (AppStartTime + rn));
-      app.Stop (Seconds (AppStartTime + 10.0 + rn));
-      clientApps.Add (app);
-      sinkApps.Add (sinkHelper.Install (serverNodes.Get (i)));
+      for (int l = 0; l < appsPerInterface; ++l)
+        {
+          rn = x.GetValue ();
+          AddressValue remoteAddress(InetSocketAddress (interfaceAdjacencyList[i].GetAddress (1), port[l]));
+
+          clientHelper.SetAttribute ("TOS", UintegerValue((i + l) % 6));
+          clientHelper.SetAttribute ("Remote", remoteAddress);
+
+          ApplicationContainer app = clientHelper.Install (clientNodes.Get (i));
+          NS_LOG_INFO ((format("Application on device %d (%s) starting at %g") % (N+i+1)
+                        % Names::FindName(clientNodes.Get (i))
+                        % (AppStartTime+rn)).str());
+
+          app.Start (Seconds (AppStartTime + rn));
+          app.Stop (Seconds (AppStartTime + runTime - 13 + rn));
+
+          clientApps.Add (app);
+          sinkApps.Add (sinkHelper[l].Install (serverNodes.Get (i)));
+        }
     }
 
   sinkApps.Start (Seconds (0.01));
-  sinkApps.Stop (Seconds (15.0));
+  sinkApps.Stop (Seconds (runTime - 10));
 
   PointToPointHelper pointToPoint;
 
   //configure tracing
   AsciiTraceHelper ascii;
-  Ptr<OutputStreamWrapper> stream = ascii.CreateFileStream ("tcp-qfp.tr");
+  std::stringstream asciiStr;
+  asciiStr << pathOut << "/tcp-qfp.tr";
+  Ptr<OutputStreamWrapper> stream = ascii.CreateFileStream (asciiStr.str());
   pointToPoint.EnableAsciiAll (stream);
-  pointToPoint.EnablePcapAll ("tcp-qfp");
+  std::stringstream pcapStr;
+  pcapStr << pathOut << "/tcp-qfp";
+  pointToPoint.EnablePcapAll (pcapStr.str());
 
-  // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/$ns3::CoDelQueue/count",
+  //if (printSockStats)
+  //  {
+  //    Config::ConnectWithoutContext ("/NodeList/*/ApplicationList/*/$ns3::BulkSendApplication/SocketCreateTrace", MakeCallback (&SocketCreateTraceNodeCB));
+  //    Config::ConnectWithoutContext ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/SocketCreateTrace", MakeCallback (&SocketCreateTraceSinkCB));
+  //  }
+  //Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/$ns3::CoDelQueue/count",
   //                                MakeCallback(&countTrace));
-  // Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/$ns3::CoDelQueue/bytesInQueue",
+  //Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/$ns3::CoDelQueue/bytesInQueue",
   //                                MakeCallback(&bytesInQueueTrace));
 
+  Ptr<FlowMonitor> flowmon;
+  if (flowMonitor)
+    {
+      FlowMonitorHelper flowmonHelper;
+      flowmon = flowmonHelper.InstallAll ();
+    }
+
   NS_LOG_INFO ("Run Simulation.");
-  Simulator::Stop (Seconds (30.0));
+  Simulator::Stop (Seconds (runTime));
   Simulator::Run ();
+
+  if (flowMonitor)
+    {
+      std::stringstream stmp;
+      stmp << pathOut << "/tcp-qfp.flowmon";
+
+      flowmon->SerializeToXmlFile (stmp.str ().c_str (), false, false);
+    }
+
   Simulator::Destroy ();
   NS_LOG_INFO ("Done.");
 
