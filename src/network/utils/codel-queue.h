@@ -97,6 +97,7 @@ public:
 private:
   virtual bool DoEnqueue (Ptr<Packet> p);
   virtual Ptr<Packet> DoDequeue (void);
+  bool CoDelDoDequeue (Ptr<Packet>& p, codel_time_t now);
   virtual Ptr<const Packet> DoPeek (void) const;
   void NewtonStep(void);
   codel_time_t ControlLaw(codel_time_t t);

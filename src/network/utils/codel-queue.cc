@@ -274,7 +274,7 @@ bool
 CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
 {
   CoDelTimestampTag tag;
-  bool drop;
+
   p->PeekPacketTag (tag);
   Time delta = Simulator::Now () - tag.GetTxTime ();
   NS_LOG_INFO ("Sojourn time " << delta.GetSeconds ());
@@ -288,7 +288,7 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
       return false;
     }
 
-  drop = false;
+  bool drop = false;
 
   if (m_first_above_time == 0)
     {
@@ -306,20 +306,18 @@ CoDelQueue::ShouldDrop(Ptr<Packet> p, codel_time_t now)
   return drop;
 }
 
-Ptr<Packet>
-CoDelQueue::DoDequeue (void)
+bool
+CoDelQueue::CoDelDoDequeue (Ptr<Packet>& p, codel_time_t now)
 {
-  NS_LOG_FUNCTION (this);
-
   if (m_packets.empty ())
     {
       m_dropping = false;
       m_first_above_time = 0;
+      ++m_states;
       NS_LOG_LOGIC ("Queue empty");
       return 0;
     }
-  codel_time_t now = codel_get_time();
-  Ptr<Packet> p = m_packets.front ();
+  p = m_packets.front ();
   m_packets.pop ();
   m_bytesInQueue -= p->GetSize ();
 
@@ -327,7 +325,18 @@ CoDelQueue::DoDequeue (void)
   NS_LOG_LOGIC ("Number packets " << m_packets.size ());
   NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
 
-  bool drop = ShouldDrop(p, now);
+  return ShouldDrop(p, now);
+}
+
+Ptr<Packet>
+CoDelQueue::DoDequeue (void)
+{
+  NS_LOG_FUNCTION (this);
+  Ptr<Packet> p;
+  codel_time_t now = codel_get_time();
+
+  bool drop = CoDelDoDequeue(p, now);
+
   if (m_dropping)
     {
       if (!drop)
@@ -346,27 +355,16 @@ CoDelQueue::DoDequeue (void)
            * that the next drop should happen now,
            * hence the while loop.
            */
-          while (m_dropping && codel_time_after_eq(now, m_drop_next)) {
+          while (m_dropping && codel_time_after_eq(now, m_drop_next))
+            {
               Drop(p, true);
               ++m_drop_count;
               ++m_count;
               NewtonStep();
-              if (m_packets.empty ())
-                {
-                  m_dropping = false;
-                  NS_LOG_LOGIC ("Queue empty");
-                  ++m_states;
-                  return 0;
-                }
-              p = m_packets.front ();
-              m_packets.pop ();
-              m_bytesInQueue -= p->GetSize ();
 
-              NS_LOG_LOGIC ("Popped " << p);
-              NS_LOG_LOGIC ("Number packets " << m_packets.size ());
-              NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
+              drop = CoDelDoDequeue(p, now);
 
-              if (!ShouldDrop(p, now))
+              if (!drop)
                 {
                   /* leave dropping state */
                   m_dropping = false;
@@ -376,7 +374,7 @@ CoDelQueue::DoDequeue (void)
                   /* and schedule the next drop */
                   m_drop_next = ControlLaw(m_drop_next);
                 }
-          }
+            }
         }
     }
   else if (drop && (codel_time_before(now - m_drop_next, TIME2CODEL(m_Interval)) ||
@@ -384,12 +382,9 @@ CoDelQueue::DoDequeue (void)
     {
       Drop(p, true);
       ++m_drop_count;
-
-      NS_LOG_LOGIC ("Popped " << p);
-      NS_LOG_LOGIC ("Number packets " << m_packets.size ());
-      NS_LOG_LOGIC ("Number bytes " << m_bytesInQueue);
-
+      drop = CoDelDoDequeue(p, now);
       m_dropping = true;
+
       ++m_state3;
       /*
        * if min went above target close to when we last went below it
@@ -409,7 +404,6 @@ CoDelQueue::DoDequeue (void)
         }
       m_lastcount = m_count;
       m_drop_next = ControlLaw(now);
-      p = NULL;
     }
 
   ++m_states;
