@@ -141,7 +141,7 @@ Fq_CoDelQueue::DoEnqueue (Ptr<Packet> p)
       slot = m_ht[h];
     }
 
-  queued = slot->q->Enqueue(p);
+  queued = slot->q->Enqueue(p, false);
 
   if (queued)
     {
