@@ -147,7 +147,7 @@ TypeId CoDelQueue::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MaxBytes",
                    "The maximum number of bytes accepted by this CoDelQueue.",
-                   UintegerValue (1500*DEFAULT_CODEL_LIMIT),
+                   UintegerValue (1500 * DEFAULT_CODEL_LIMIT),
                    MakeUintegerAccessor (&CoDelQueue::m_maxBytes),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MinBytes",
@@ -165,6 +165,11 @@ TypeId CoDelQueue::GetTypeId (void)
                    StringValue ("5ms"),
                    MakeTimeAccessor (&CoDelQueue::m_Target),
                    MakeTimeChecker ())
+    .AddAttribute ("OPD",
+                   "DropOldest",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&CoDelQueue::m_OPD),
+                   MakeBooleanChecker ())
     .AddTraceSource("count",
                     "CoDel count",
                     MakeTraceSourceAccessor(&CoDelQueue::m_count))
@@ -239,6 +244,24 @@ CoDelQueue::GetMode (void)
 }
 
 bool
+CoDelQueue::DropOldest (Ptr<Packet> p)
+{
+  int sizeToFree = (m_mode == BYTES) ? p->GetSize() : 1;
+  Ptr<Packet> drop = m_packets.front();
+  while (sizeToFree > 0 && !m_packets.empty())
+    {
+      sizeToFree -= (m_mode == BYTES) ? (int)drop->GetSize() : 1;
+
+      Drop(drop, true);
+
+      m_bytesInQueue -= drop->GetSize ();
+      m_packets.pop();
+      drop = m_packets.front();
+    }
+  return (sizeToFree <= 0);
+}
+
+bool
 CoDelQueue::DoEnqueue (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
@@ -246,17 +269,33 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
   if (m_mode == PACKETS && (m_packets.size () >= m_maxPackets))
     {
       NS_LOG_LOGIC ("Queue full (at max packets) -- dropping pkt");
-      Drop (p);
-      ++m_drop_overlimit;
-      return false;
+      if (!m_OPD)
+        {
+          Drop (p);
+          ++m_drop_overlimit;
+          return false;
+        }
+      else
+        {
+          if (!DropOldest(p))
+            return false;
+        }
     }
 
   if (m_mode == BYTES && (m_bytesInQueue + p->GetSize () >= m_maxBytes))
     {
       NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- dropping pkt");
-      Drop (p);
-      ++m_drop_overlimit;
-      return false;
+      if (!m_OPD)
+        {
+          Drop (p);
+          ++m_drop_overlimit;
+          return false;
+        }
+      else
+        {
+          if (!DropOldest(p))
+            return false;
+        }
     }
 
   CoDelTimestampTag tag;

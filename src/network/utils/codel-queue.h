@@ -95,6 +95,7 @@ public:
   uint32_t GetQueueSize (void);
 
 private:
+  bool DropOldest (Ptr<Packet> p);
   virtual bool DoEnqueue (Ptr<Packet> p);
   virtual Ptr<Packet> DoDequeue (void);
   bool CoDelDoDequeue (Ptr<Packet>& p, codel_time_t now);
@@ -111,6 +112,7 @@ private:
   uint32_t m_minbytes;
   Time m_Interval;
   Time m_Target;
+  bool m_OPD;
   uint32_t m_lastcount;
   TracedValue<uint32_t> m_count;
   TracedValue<uint32_t> m_drop_count;
