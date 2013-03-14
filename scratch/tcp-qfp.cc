@@ -287,17 +287,17 @@ main (int argc, char *argv[])
 
   if (ecnTcp)
     {
-      Config::SetDefault ("ns3::TcpSocketBase::ECNCapable", BooleanValue (true));
+      Config::SetDefault ("ns3::TcpSocket::ECN", BooleanValue (true));
     }
 
   if (drr)
     {
-      Config::SetDefault ("ns3::RedQueue::UseDRR", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueue::DRR", BooleanValue (true));
     }
 
   if (opd)
     {
-      Config::SetDefault ("ns3::RedQueue::OPD", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueue::HeadDrop", BooleanValue (true));
     }
 
   if (modeGentle)
