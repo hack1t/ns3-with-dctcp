@@ -63,6 +63,10 @@ BulkSendApplication::GetTypeId (void)
                    TypeIdValue (TcpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&BulkSendApplication::m_tid),
                    MakeTypeIdChecker ())
+    .AddAttribute ("TOS", "TOS value to use for packets.",
+                   UintegerValue(0),
+                   MakeUintegerAccessor (&BulkSendApplication::m_tos),
+                   MakeUintegerChecker<uint8_t> (0, 8))
     .AddTraceSource ("Tx", "A new packet is created and is sent",
                      MakeTraceSourceAccessor (&BulkSendApplication::m_txTrace))
     .AddTraceSource ("SocketCreateTrace", "Socket was created",
@@ -129,6 +133,7 @@ void BulkSendApplication::StartApplication (void) // Called at time specified by
         }
 
       m_txTraceSource (m_socket);
+      m_socket->SetIpTos(m_tos);
       m_socket->Bind ();
       m_socket->Connect (m_peer);
       m_socket->ShutdownRecv ();

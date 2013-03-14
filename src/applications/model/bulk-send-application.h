@@ -90,6 +90,7 @@ private:
   uint32_t        m_sendSize;     // Size of data to send each time
   uint32_t        m_maxBytes;     // Limit total number of bytes sent
   uint32_t        m_totBytes;     // Total bytes sent so far
+  uint8_t         m_tos;          // TOS value for socket to use
   TypeId          m_tid;
   TracedCallback<Ptr<const Packet> > m_txTrace;
   TracedCallback<Ptr<Socket> > m_txTraceSource;
