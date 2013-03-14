@@ -127,7 +127,7 @@ Fq_CoDelQueue::DoEnqueue (Ptr<Packet> p)
   Fq_CoDelSlot *slot;
 
   std::size_t h = Fq_CoDelQueue::hash(p);
-  NS_LOG_DEBUG ("fq_codel enqueue use queue "<<h);
+  NS_LOG_DEBUG ("fq_codel enqueue use queue " << h);
   if (m_ht[h] == NULL)
     {
       NS_LOG_DEBUG ("fq_codel enqueue Create queue " << h);
@@ -148,14 +148,15 @@ Fq_CoDelQueue::DoEnqueue (Ptr<Packet> p)
       slot->backlog += p->GetSize();
       m_backlog += p->GetSize();
 
-      if (list_empty(&slot->flowchain)) {
-        NS_LOG_DEBUG ("fq_codel enqueue inactive queue "<<h);
-        list_add_tail(&slot->flowchain, &m_new_flows);
-        slot->deficit = m_quantum;
-      }
+      if (list_empty(&slot->flowchain))
+        {
+          NS_LOG_DEBUG ("fq_codel enqueue inactive queue " << h);
+          list_add_tail(&slot->flowchain, &m_new_flows);
+          slot->deficit = m_quantum;
+        }
     }
 
-  NS_LOG_DEBUG ("fq_codel enqueue "<<slot->h<<" "<<queued);
+  NS_LOG_DEBUG ("fq_codel enqueue " << slot->h << " " << queued);
   return queued;
 }
 

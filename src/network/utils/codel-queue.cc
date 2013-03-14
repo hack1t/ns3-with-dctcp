@@ -245,7 +245,7 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
 
   if (m_mode == PACKETS && (m_packets.size () >= m_maxPackets))
     {
-      NS_LOG_LOGIC ("Queue full (at max packets) -- droppping pkt");
+      NS_LOG_LOGIC ("Queue full (at max packets) -- dropping pkt");
       Drop (p);
       ++m_drop_overlimit;
       return false;
@@ -253,7 +253,7 @@ CoDelQueue::DoEnqueue (Ptr<Packet> p)
 
   if (m_mode == BYTES && (m_bytesInQueue + p->GetSize () >= m_maxBytes))
     {
-      NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- droppping pkt");
+      NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- dropping pkt");
       Drop (p);
       ++m_drop_overlimit;
       return false;
